@@ -13,7 +13,7 @@
   font-size: 36px;
   font-family: acumin-pro-condensed, sans-serif;
   font-style: italic;
-  font-weight: 100;
+  font-weight: 200;
 }
 
 .bgimg-1, .bgimg-2, .bgimg-3 {
@@ -36,12 +36,12 @@ body, html {
 
 .bgimg-2 {
   background-image: url("images/main_full_background2.jpg");
-  min-height: 400px;
+  min-height: 800px;
 }
 
 .bgimg-3 {
   background-image: url("img_parallax3.jpg");
-  min-height: 400px;
+  min-height: 800px;
 }
 
 .caption {
@@ -70,4 +70,20 @@ div.title {
   left: 50%;
   margin-right: -50%;
   transform: translate(-50%, -50%)
+}
+
+h3 {
+  color: #282E34;
+  font-size: 24px;
+  font-family: europa, sans-serif;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.bodyparagraph {
+  color: #282E34;
+  font-size: 20px;
+  font-family: acumin-pro-condensed, sans-serif;
+  font-style: normal;
+  font-weight: 400;
 }
