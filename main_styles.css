@@ -1,5 +1,10 @@
 @charset "utf-8";
 
+/*
+Buttons taken from: https://tympanus.net/Development/CreativeButtons/
+Fonts via: Adobe Typekit
+*/
+
 #big_main_heading {
   color: #282E34;
   font-size: 96px;
@@ -72,8 +77,11 @@ div.title {
   transform: translate(-50%, -50%)
 }
 
+div.body {
+	padding: 50px 150px;
+}
+
 h3 {
-  color: #282E34;
   font-size: 24px;
   font-family: europa, sans-serif;
   font-style: normal;
@@ -81,9 +89,40 @@ h3 {
 }
 
 .bodyparagraph {
-  color: #282E34;
   font-size: 20px;
   font-family: acumin-pro-condensed, sans-serif;
   font-style: normal;
   font-weight: 400;
+}
+
+a.btn {
+	border: none;
+	font-family: acumin-pro-condensed, sans-serif;
+	font-size: inherit;
+	color: inherit;
+	background: none;
+	cursor: pointer;
+	padding: 25px 80px;
+	display: inline-block;
+	margin: 15px 30px;
+	text-transform: uppercase;
+	letter-spacing: 1px;
+	font-weight: 700;
+	outline: none;
+	position: relative;
+	-webkit-transition: all 0.3s;
+	-moz-transition: all 0.3s;
+	transition: all 0.3s;
+	text-decoration: none;
+}
+
+a.btn-1 {
+	border: 3px solid #fff;
+	color: #fff;
+}
+
+a.btn-1a:hover,
+a.btn-1a:active {
+	color: #282E34;
+	background: #fff;
 }
