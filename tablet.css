@@ -1,6 +1,6 @@
 @charset "utf-8";
 
-@media (max-width: 768px){
+@media (min-width: 480px) AND (max-width: 768px){
 .bgimg-1, .bgimg-2, .bgimg-3 {
 	  position: relative;
 	  background-attachment: fixed;
