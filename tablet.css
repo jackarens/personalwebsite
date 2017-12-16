@@ -1,5 +1,28 @@
 @charset "utf-8";
 
 @media (max-width: 768px){
-	
+.bgimg-1, .bgimg-2, .bgimg-3 {
+	  position: relative;
+	  background-attachment: fixed;
+	  background-position: center;
+	  background-repeat: no-repeat;
+	  background-size: cover;
+	}
+
+.bgimg-1 {
+	  background-image: url("images/main_full_background.JPG");
+	  min-height: 100%;
+	}
+
+.bgimg-2 {
+	  background-image: url("images/main_full_background2.jpg");
+	  min-height: 800px;
+	}
+
+.bgimg-3 {
+	  background-image: url("images/main_full_background3.JPG");
+	  min-height: 800px;
+	}
+}
+
 }
