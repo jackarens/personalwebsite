@@ -2,6 +2,9 @@
 @import url("mobile.css") screen and (max-width:768px)
 
 ;
+@import url("desktop.css") screen and (max-width:1550px)
+
+;
 
 /*
 Buttons taken from: https://tympanus.net/Development/CreativeButtons/
@@ -29,31 +32,7 @@ body, html {
   margin: 0;
 }
 
-@media (max-width: 1550px){
-	.bgimg-1, .bgimg-2, .bgimg-3 {
-	  position: relative;
-	  background-attachment: fixed;
-	  background-position: center;
-	  background-repeat: no-repeat;
-	  background-size: cover;
-	}
-
-	.bgimg-1 {
-	  background-image: url("images/main_full_background.JPG");
-	  min-height: 100%;
-	}
-
-	.bgimg-2 {
-	  background-image: url("images/main_full_background2.jpg");
-	  min-height: 800px;
-	}
-
-	.bgimg-3 {
-	  background-image: url("images/main_full_background3.JPG");
-	  min-height: 800px;
-	}
-
-	.caption {
+.caption {
 	  position: absolute;
 	  left: 0;
 	  top: 50%;
@@ -62,7 +41,7 @@ body, html {
 	  color: #000;
 	}
 
-	.caption span.border {
+.caption span.border {
 	  padding-bottom: 50px;
 	  color: white;
 	  font-size: 96pt;
@@ -71,7 +50,7 @@ body, html {
 	  font-weight: 700;
 	}
 
-	div.title {
+div.title {
 	  height: 10em;
 	  margin: 0;
 	  position: absolute;
@@ -81,25 +60,23 @@ body, html {
 	  transform: translate(-50%, -50%)
 	}
 
-	div.body {
+div.body {
 		padding: 50px 150px;
 	}
 
-	h3 {
+h3 {
 	  font-size: 24px;
 	  font-family: europa, sans-serif;
 	  font-style: normal;
 	  font-weight: 700;
 	}
 
-	.bodyparagraph {
+.bodyparagraph {
 	  font-size: 20px;
 	  font-family: acumin-pro-condensed, sans-serif;
 	  font-style: normal;
 	  font-weight: 400;
 	}
-}
-
 
 a.btn {
 	border: none;
