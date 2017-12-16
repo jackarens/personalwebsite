@@ -1,6 +1,6 @@
 @charset "utf-8";
 
-@media (min-width: 768px) AND (max-width: 1550px){
+@media (min-width: 768px){
 
 .bgimg-1, .bgimg-2, .bgimg-3 {
 	  position: relative;
