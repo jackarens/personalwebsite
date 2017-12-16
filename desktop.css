@@ -24,4 +24,8 @@
 	  background-image: url("images/main_full_background3.JPG");
 	  min-height: 800px;
 	}
+	
+div.body {
+		padding: 50px 150px;
+	}
 }
