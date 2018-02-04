@@ -136,8 +136,15 @@ h3 {
 	font-family: acumin-pro-condensed, sans-serif;
 	font-style: normal;
 	font-weight: 400;
-	color: #282E34;
 	}
+
+.graytext {
+	color: #282E34;
+}
+
+.whitetext {
+	color: white;
+}
 
 a.btn {
 	border: none;
