@@ -49,12 +49,12 @@ body, html {
 
 .bgimg-2 {
 	  background-image: url("images/main_full_background2.jpg");
-	  min-height: 800px;
+	  min-height: 100%;
 	}
 
 .bgimg-3 {
 	  background-image: url("images/main_full_background3.JPG");
-	  min-height: 800px;
+	  min-height: 100%;
 	}
 	
 div.body {
@@ -110,6 +110,7 @@ div.body {
 	justify-content: flex-start;
 	align-items: flex-start;
 	align-self: flex-end;
+	padding-right: 80px;
 }
 
 .caption span.border {
@@ -131,7 +132,7 @@ h3 {
 	}
 
 .bodyparagraph {
-	font-size: 20px;
+	font-size: 24px;
 	font-family: acumin-pro-condensed, sans-serif;
 	font-style: normal;
 	font-weight: 400;
@@ -180,6 +181,11 @@ a.btn-1a:active {
 		justify-content: center;
 		align-items: center;
 		align-self: center;
+		padding-right: 0px;
+	}
+	
+	.bodyparagraph {
+		font-size: 28px;
 	}
 }
 
@@ -187,5 +193,9 @@ a.btn-1a:active {
 @media (max-width:400px){
 	div.body {
 		padding: 50px 10px;
+	}
+	
+	.bodyparagraph {
+		font-size: 32px;
 	}
 }
