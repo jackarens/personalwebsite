@@ -1,0 +1,109 @@
+/* CSS Document */
+
+/* Fonts via: Adobe Typekit */
+/* Possible red color: #e74c3c or #c0392b */
+
+#big_main_heading {
+	color: #282E34;
+	font-size: 96px;
+	font-family: europa, sans-serif;
+	font-style: normal;
+	font-weight: 700;
+	margin: auto;
+	margin-top: 0px;
+	margin-bottom: 0px;
+	text-align: center;
+}
+
+#main_sub_heading {
+	color: #282E34;
+	font-size: 36px;
+	font-family: acumin-pro-condensed, sans-serif;
+	font-style: italic;
+	font-weight: 200;
+	margin: auto;
+	margin-top: 0px;
+	margin-bottom: 0px;
+	text-align: center;
+}
+
+.picture_caption {
+	font-size: 18px;
+	font-family: acumin-pro-condensed, sans-serif;
+	font-style: italic;
+	font-weight: 400;
+	text-align: center;
+	margin-bottom: 0px;
+	margin-top: 5px;
+}
+
+.caption span.border {
+	padding-bottom: 50px;
+	color: white;
+	font-size: 96pt;
+	font-family: europa, sans-serif;
+	font-style: normal;
+	font-weight: 700;
+}
+
+.section_header {
+	width: 100%;
+}
+
+h2 {
+	font-size: 40px;
+	font-family: europa, sans-serif;
+	font-style: normal;
+	font-weight: 700;
+	text-align: center;
+	color: #282E34;
+}
+
+h3 {
+	font-size: 24px;
+	font-family: europa, sans-serif;
+	font-style: normal;
+	font-weight: 700;
+	text-align: center;
+	color: #282E34;
+}
+
+h4 {
+	font-size: 20px;
+	font-family: europa, sans-serif;
+	font-style: normal;
+	font-weight: 400;
+	text-align: center;
+	color: #282E34;
+}
+
+.bodyparagraph {
+	font-size: 24px;
+	font-family: acumin-pro-condensed, sans-serif;
+	font-style: normal;
+	font-weight: 400;
+}
+
+.graytext {
+	color: #282E34;
+}
+
+.whitetext {
+	color: #ffffff;
+}
+
+/* TABLET */
+@media (max-width:768px){
+	
+	.bodyparagraph {
+		font-size: 28px;
+	}
+}
+
+/*MOBILE*/
+@media (max-width:400px){
+	
+	.bodyparagraph {
+		font-size: 32px;
+	}
+}
