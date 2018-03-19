@@ -3,8 +3,9 @@
 /* Used for layout */
 
 body, html {
-  height: 100%;
-  margin: 0;
+	height: 100%;
+	margin: 0;
+	-webkit-overflow-scrolling: touch;
 }
 
 a {
@@ -21,21 +22,20 @@ a {
 	-webkit-background-size: cover;
 	-moz-background-size: cover;
 	-o-background-size: cover;
+	min-height: 100%;
 }
 
 .bgimg-1 {
 	background-image: url("../images/main_full_background.JPG");
-	min-height: 100%;
+	background-position: right;
 	}
 
 .bgimg-2 {
 	background-image: url("../images/main_full_background2.jpg");
-	min-height: 100%;
 	}
 
 .bgimg-3 {
 	background-image: url("../images/main_full_background3.JPG");
-	min-height: 100%;
 }
 	
 div.body {
@@ -73,11 +73,11 @@ div.body {
 
 .cv_item {
 	margin: 10px auto;
-	max-width: 500px;
+	max-width: 1000px;
 }
 
 .cv_image {
-	max-width: inherit;
+	max-width: 700;
 	width: 90%;
 	
 }
