@@ -152,6 +152,7 @@ div.body {
 	.bgimg-1, .bgimg-2, .bgimg-3 {
 		width: 100%;
 		height: auto;
+		background-attachment: none;
 	}
 	
 	.bgimg-1 {
