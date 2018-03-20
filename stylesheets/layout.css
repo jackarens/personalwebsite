@@ -145,23 +145,24 @@ div.body {
 
 	html {
 		background-size: auto;
-		overflow: auto;
+		overflow: hidden;
 	}
 	
 	.bgimg-1, .bgimg-2, .bgimg-3 {
-		background-size: auto 100vh;
+		height: auto;
+		width: auto;
 	}
 	
 	.bgimg-1 {
-		background: url("../images/main_full_background.JPG") no-repeat right center;
+		background: url("../images/main_full_background.JPG") no-repeat center center scroll;
 	}
 
 	.bgimg-2 {
-		background: url("../images/main_full_background2.jpg") no-repeat center center;
+		background: url("../images/main_full_background2.jpg") no-repeat center center cover;
 	}
 
 	.bgimg-3 {
-		background: url("../images/main_full_background3.JPG") no-repeat center center;
+		background: url("../images/main_full_background3.JPG") no-repeat center center cover;
 	}
 	
 	body {  
