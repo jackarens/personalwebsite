@@ -145,13 +145,12 @@ div.body {
 
 	html {
 		background-size: auto;
-		height: 100%;
 		overflow: hidden;
 	}
 	
 	.bgimg-1, .bgimg-2, .bgimg-3 {
-		width: 100%;
 		height: auto;
+		max-width: 150%;
 		background-attachment: none;
 	}
 	
@@ -168,7 +167,6 @@ div.body {
 	}
 	
 	body {  
-		height:100%;
 		overflow: scroll;
 		-webkit-overflow-scrolling: touch;
 	}
