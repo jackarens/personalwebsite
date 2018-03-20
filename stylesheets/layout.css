@@ -149,6 +149,11 @@ div.body {
 		overflow: hidden;
 	}
 	
+	.bgimg-1, .bgimg-2, .bgimg-3 {
+		width: 100%;
+		height: auto;
+	}
+	
 	.bgimg-1 {
 		background: url("../images/main_full_background.JPG") no-repeat top center scroll;
 	}
