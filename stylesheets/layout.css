@@ -152,7 +152,7 @@ div.body {
 		height: 100vh;
 		width: auto;
 		max-width: 150vh;
-		background-attachment: none;
+		background-attachment: scroll;
 	}
 	
 	.bgimg-1 {
