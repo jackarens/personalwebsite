@@ -150,7 +150,7 @@ div.body {
 	
 	.bgimg-1, .bgimg-2, .bgimg-3 {
 		height: auto;
-		max-width: 150%;
+		max-width: 150vh;
 		background-attachment: none;
 	}
 	
