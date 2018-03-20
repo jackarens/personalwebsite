@@ -150,15 +150,15 @@ div.body {
 	}
 	
 	.bgimg-1 {
-		background: url("../images/main_full_background.JPG") no-repeat top center fixed;
+		background: url("../images/main_full_background.JPG") no-repeat top center scroll;
 	}
 
 	.bgimg-2 {
-		background: url("../images/main_full_background2.jpg") no-repeat top center fixed;
+		background: url("../images/main_full_background2.jpg") no-repeat top center scroll;
 		}
 
 	.bgimg-3 {
-		background: url("../images/main_full_background3.JPG") no-repeat top center fixed;
+		background: url("../images/main_full_background3.JPG") no-repeat top center scroll;
 	}
 	
 	body {  
