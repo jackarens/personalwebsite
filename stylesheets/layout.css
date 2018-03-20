@@ -154,7 +154,7 @@ div.body {
 	}
 	
 	.bgimg-1 {
-		background: url("../images/main_full_background.JPG") no-repeat center center scroll;
+		background: url("../images/main_full_background.JPG") no-repeat right center cover;
 	}
 
 	.bgimg-2 {
