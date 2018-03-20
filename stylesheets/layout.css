@@ -149,7 +149,7 @@ div.body {
 	}
 	
 	.bgimg-1, .bgimg-2, .bgimg-3 {
-		background-size: auto 100%;
+		background-size: auto 100vh;
 	}
 	
 	.bgimg-1 {
