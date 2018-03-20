@@ -143,25 +143,22 @@ div.body {
 
 @media only screen and (max-device-width : 1024px)  {
 
-	html {  
-		background-size: cover;
+	html {
+		background-size: auto;
 		height: 100%;
 		overflow: hidden;
 	}
 	
 	.bgimg-1 {
 		background: url("../images/main_full_background.JPG") no-repeat top center fixed;
-		height:100%;
 	}
 
 	.bgimg-2 {
 		background: url("../images/main_full_background2.jpg") no-repeat top center fixed;
-		height:100%;
 		}
 
 	.bgimg-3 {
 		background: url("../images/main_full_background3.JPG") no-repeat top center fixed;
-		height:100%;
 	}
 	
 	body {  
