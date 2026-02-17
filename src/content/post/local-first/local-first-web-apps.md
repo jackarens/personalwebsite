@@ -3,7 +3,7 @@ title: "The Architecture of Local-first Web Apps"
 description: "Our journey implementing a local-first architecture at Layer - covering context, challenges, and solutions for building offline-capable web applications."
 publishDate: "2026-02-17"
 updatedDate: "17 Feb 2026"
-tags: ["architecture", "local-first", "web-development", "offline"]
+tags: ["software-architecture", "local-first", "web-development", "offline"]
 pinned: true
 ---
 
@@ -24,9 +24,9 @@ However, if we want to show any additional information about the users that have
 
 For a long time, our solution at Layer was to limit the data shown in high level views (like tables), loading richer related data only when users clicked through to a specific entry (row). This kept bandwidth in check, but at the cost users not having all the data they expected, when they expected it. It also meant that we were loading similar or overlapping sets of data repeatedly. As users navigated our app, they might load the same user data multiple times, once per issue they clicked into. This led to a lot of redundant network requests and slower perceived performance.
 
-The trouble showed up when relationships deepened. To support high level (table) views, we propagated easy fields (names, IDs), but this wasn't feasible for all the data user's could possibly want. This also introduced issues with drift: the presence of stale data becuase a propagation operation had failed. At project scale, neither direction was cheap (or reasonable).
+The trouble showed up when relationships became more complex. To support high level (table) views, we propagated easy fields (names, IDs), but this wasn't feasible for all the data user's could possibly want. This also introduced issues with drift: the presence of stale data becuase a propagation operation had failed. At project scale, neither direction was cheap (or reasonable).
 
-In addition to these concerns about data availability within complex setups, our users wanted some sort of reliable offline experience. In many of these use cases, limitations with loading data from our servers were reasonable limitations, but users couldn't understand why the data they were entering into the app locally could perform as expected. Our Firestore integration provided some offline capabilities, but it was clear that we needed a more robust solution to meet our users' needs.
+In addition to these concerns about data availability within complex setups, our users wanted some sort of reliable offline experience. In many of these use cases, limitations with loading data from our servers were reasonable(ish), but users couldn't understand why the data they were entering into the app locally could perform as expected. Our Firestore integration provided some offline capabilities, but it was clear that we needed a more robust solution to meet our users' needs.
 
 ## Solutions Considered
 
@@ -79,10 +79,10 @@ We explored a handful of providers during our research into local-first architec
 
 - Flexible implementation: Replicache provices a client library that handles the local data storage read/write and synchronization calls, but the push/pull endpoints are defined by the implementers, giving us the flexibility to tailor the behavior to our specific needs. The server library is limited to types and interfaces that ensure compatibilty with the client, but otherwise doesn't impose any constraints on how we implement the server-side logic.
 - IndexedDB storage: Replicache uses IndexedDB for local storage, which is a widely supported and performant option for storing large amounts of data in the browser. This was important for us given the amount of data we needed to store locally and our need for cross-platform support (web and Capacitor iOS). We also wanted battle tested[^1]. Origin Private File System API implementations were a bit too new for our tastes, and we wanted to avoid the risk of running into issues with browser support or performance.
-
-[^1]: We actually found out that the storage layer is customizable — Replicache provides an IndexedDB wrapper, but it could be swapped for another key/value storage solution if needed.
 - Observability: Replicache provides "hooks" that allow us to easily observe changes to the local data and update our UI accordingly. This was important for ensuring a responsive and seamless user experience as data is synchronized in the background.
 - Designed for NoSQL: Replicache is designed to work with NoSQL data models, which was a good fit for our existing Firestore data structure. This allowed us to avoid the need for complex transformations or migrations of our data to fit a different model. Replicache's successor, Zero, is designed for more traditional relational data models (SQL), though less offline capable.
+
+[^1]: We actually found out that the storage layer is customizable — Replicache provides an IndexedDB wrapper, but it could be swapped for another key/value storage solution if needed.
 
 ## Technical Implementation
 
@@ -138,9 +138,15 @@ By building a "bundle" for each project that contained the pre-serialized data f
 
 ### **Searching/Sorting/Filtering Read-in Time**
 
-:::note[Coming Soon]
-This section will cover how we optimized read-in time for searching, sorting, and filtering operations on large datasets.
-:::
+In order to support custom relationships between Layer categories (e.g. issues, users, etc) - think tabs in Excel - we had built out a very thorough and rather complex set of filtering capabilities in JS that could be used on the front-end and backend to filter groups of elements.[^2] This filter strucutre was extensible, already had migrations from our old filtering structure, and was built to provide feature parity (and more!) compared to our existing filtering capabilities with ElasticSearch. However, it was built with the assumption that the data would be loaded and available synchronouslly, which meant that we were running into performance issues when trying to load all that data we had so nicely cached and stored in the user's IndexedDB into memory. Filtering and searching ended up being easier to solve, after all, you can always filter on smaller subsets of data and return those to the user once you have "enough", but sorting was a bit more of a challenge. To filter **and** sort, you need to have all the data loaded and available in memory.
+
+[^2]: I hope to complete an article similar to this one on our filter engine. Stay tuned!
+
+After a bit of research, we came across LokiDB, an in-memory JavaScript database that provides indexing and querying capabilities. By loading index data into LokiDB, we were able to take advantage of its in-memory indexing capabilities to quickly filter and sort the data as needed, even with larger datasets.
+
+::github{repo="LokiJS-Forge/LokiDB"}
+
+We didn't need to use LokiDB for all of our data, just the data that was relevant for filtering and sorting. The data in Replicache (IndexDB) was everything, guaranteed to be up to date with the current sync and complete - no missing attributes. That data was pared down as much as possible to just the attributes we needed for filtering and sorting, and then loaded into LokiDB for quick querying. "Watching" Replicache for changes to entries within certain categories (e.g. issues, users) allowed us to know when to re-query for a given filter configuration, providing a "live-updating" feel to our data.
 
 ### **Simultaneous Bulk Server Updates**
 
