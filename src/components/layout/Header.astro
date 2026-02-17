@@ -1,0 +1,140 @@
+---
+import Search from "@/components/Search.astro";
+import ThemeToggle from "@/components/ThemeToggle.astro";
+import { menuLinks } from "@/site.config";
+import { siteConfig } from "../../site.config";
+---
+
+<header class="group relative mb-14 flex items-center sm:ps-18" id="main-header">
+	<div class="flex sm:flex-col">
+		<a
+			aria-current={Astro.url.pathname === "/" ? "page" : false}
+			class="inline-flex items-center sm:relative sm:inline-block sm:grayscale sm:hover:filter-none"
+			href="/"
+		>
+			<svg
+				aria-hidden="true"
+				class="me-3 h-10 w-10 sm:absolute sm:-start-16 sm:me-0 sm:h-14 sm:w-14"
+				fill="none"
+				focusable="false"
+				viewBox="0 0 300 300"
+				xmlns="http://www.w3.org/2000/svg"
+			>
+				<title>Server Farm</title>
+				<rect x="0" y="260" width="300" height="40" fill="#228B22"></rect>
+				<rect x="0" y="280" width="300" height="20" fill="#006400"></rect>
+				<rect x="30" y="140" width="80" height="120" fill="#A52A2A"></rect>
+				<rect x="10" y="140" width="20" height="120" fill="#8B0000"></rect>
+				<path d="M10 140 L60 80 L110 140" fill="#8B0000"></path>
+				<rect x="50" y="180" width="40" height="80" fill="#5C4033"></rect>
+				<rect x="50" y="180" width="40" height="10" fill="#3E2723"></rect>
+				<rect x="65" y="190" width="10" height="70" fill="#3E2723"></rect>
+				<rect x="140" y="100" width="80" height="160" fill="#465D75"></rect>
+				<rect x="140" y="100" width="20" height="160" fill="#2C3E50"></rect>
+				<rect x="140" y="80" width="80" height="20" fill="#2C3E50"></rect>
+
+				<rect x="160" y="130" width="50" height="110" fill="#111111"></rect>
+
+				<rect x="170" y="140" width="10" height="10" fill="#00FF00"></rect>
+				<rect x="190" y="140" width="10" height="10" fill="#00FF00"></rect>
+				<rect x="170" y="170" width="30" height="10" fill="#1E90FF"></rect>
+				<rect x="170" y="200" width="10" height="10" fill="#FF4500"></rect>
+				<rect x="190" y="200" width="10" height="10" fill="#00FF00"></rect>
+				<rect x="170" y="220" width="30" height="10" fill="#555555"></rect>
+				<rect x="170" y="40" width="20" height="40" fill="#1E90FF"></rect>
+
+				<rect x="160" y="0" width="40" height="30" fill="#0000CD"></rect>
+				<rect x="170" y="10" width="20" height="10" fill="#00BFFF"></rect>
+				<rect x="130" y="30" width="40" height="10" fill="#1E90FF"></rect>
+				<rect x="110" y="10" width="30" height="30" fill="#4169E1"></rect>
+				<rect x="115" y="15" width="10" height="10" fill="#00FFFF"></rect>
+				<rect x="190" y="50" width="40" height="10" fill="#1E90FF"></rect>
+				<rect x="220" y="30" width="30" height="30" fill="#4169E1"></rect>
+				<rect x="235" y="45" width="10" height="10" fill="#00FFFF"></rect>
+				<rect x="100" y="20" width="160" height="60" fill="#FFFFFF" fill-opacity="0.8"></rect>
+				<rect x="80" y="40" width="40" height="30" fill="#FFFFFF" fill-opacity="0.8"></rect>
+				<rect x="240" y="30" width="40" height="40" fill="#FFFFFF" fill-opacity="0.8"></rect>
+			</svg>
+			<span class="ml-2 text-xl font-bold sm:text-2xl">{siteConfig.title}</span>
+		</a>
+		<nav
+			aria-label="Main menu"
+			class="bg-global-bg absolute -inset-x-4 top-12 hidden flex-col divide-y px-2 py-4 group-[.menu-open]:z-50 group-[.menu-open]:flex sm:static sm:z-auto sm:-ms-4 sm:mt-1 sm:flex sm:flex-row sm:divide-x sm:divide-y-0 sm:bg-transparent sm:p-0 sm:pl-2"
+			id="navigation-menu"
+		>
+			{
+				menuLinks.map((link) => (
+					<a
+						aria-current={Astro.url.pathname === link.path ? "page" : false}
+						class="text-accent px-2 py-4 font-semibold sm:px-4 sm:py-0 sm:underline-offset-2 sm:hover:underline"
+						href={link.path}
+					>
+						{link.title}
+					</a>
+				))
+			}
+		</nav>
+	</div>
+	<Search />
+	<ThemeToggle />
+	<mobile-button>
+		<button
+			aria-expanded="false"
+			aria-haspopup="menu"
+			class="group relative ms-4 h-7 w-7 sm:invisible sm:hidden"
+			id="toggle-navigation-menu"
+			type="button"
+		>
+			<span class="sr-only">Open main menu</span>
+			<svg
+				aria-hidden="true"
+				class="absolute start-1/2 top-1/2 h-full w-full -translate-x-1/2 -translate-y-1/2 transition-all group-aria-expanded:scale-0 group-aria-expanded:opacity-0"
+				fill="none"
+				focusable="false"
+				id="line-svg"
+				stroke="currentColor"
+				stroke-width="1.5"
+				viewBox="0 0 24 24"
+				xmlns="http://www.w3.org/2000/svg"
+			>
+				<path d="M3.75 9h16.5m-16.5 6.75h16.5" stroke-linecap="round" stroke-linejoin="round"
+				></path>
+			</svg>
+			<svg
+				aria-hidden="true"
+				class="text-accent absolute start-1/2 top-1/2 h-full w-full -translate-x-1/2 -translate-y-1/2 scale-0 opacity-0 transition-all group-aria-expanded:scale-100 group-aria-expanded:opacity-100"
+				class="text-accent"
+				fill="none"
+				focusable="false"
+				id="cross-svg"
+				stroke="currentColor"
+				stroke-width="1.5"
+				viewBox="0 0 24 24"
+				xmlns="http://www.w3.org/2000/svg"
+			>
+				<path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"></path>
+			</svg>
+		</button>
+	</mobile-button>
+</header>
+
+<script>
+	import { toggleClass } from "@/utils/domElement";
+
+	class MobileNavBtn extends HTMLElement {
+		#menuOpen: boolean = false;
+
+		connectedCallback() {
+			const headerEl = document.getElementById("main-header")!;
+			const mobileButtonEl = this.querySelector<HTMLButtonElement>("button");
+
+			mobileButtonEl?.addEventListener("click", () => {
+				if (headerEl) toggleClass(headerEl, "menu-open");
+				this.#menuOpen = !this.#menuOpen;
+				mobileButtonEl.setAttribute("aria-expanded", this.#menuOpen.toString());
+			});
+		}
+	}
+
+	customElements.define("mobile-button", MobileNavBtn);
+</script>
