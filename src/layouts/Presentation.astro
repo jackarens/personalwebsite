@@ -43,6 +43,53 @@ const {
 					margin: 0,
 				});
 				deck.initialize();
+
+				/**
+				 * Overview Mode Visibility Fix
+				 *
+				 * Reveal.js hides non-active slides using the `hidden` attribute and
+				 * inline `display: none` styles. This is normally fine, but in overview
+				 * mode (triggered by pressing Esc) all slides should be visible as thumbnails.
+				 *
+				 * The issue: Reveal.js re-applies `hidden` attributes when navigating
+				 * with arrow keys in overview mode, causing slides to disappear.
+				 *
+				 * The solution: Use a MutationObserver to detect and remove `hidden`
+				 * attributes in real-time while overview mode is active. The observer
+				 * is disconnected when exiting overview to restore normal behavior.
+				 */
+				let overviewObserver: MutationObserver | null = null;
+
+				/** Remove hidden attributes and inline display styles from all slides */
+				const showAllSlides = () => {
+					document.querySelectorAll(".slides section[hidden]").forEach((section) => {
+						section.removeAttribute("hidden");
+						(section as HTMLElement).style.display = "";
+					});
+				};
+
+				// When entering overview mode (Esc key)
+				deck.on("overviewshown", () => {
+					// Immediately show all slides
+					showAllSlides();
+
+					// Start observing for Reveal.js re-hiding slides during keyboard navigation
+					overviewObserver = new MutationObserver(showAllSlides);
+					overviewObserver.observe(document.querySelector(".slides")!, {
+						attributes: true,
+						attributeFilter: ["hidden", "style"],
+						subtree: true,
+					});
+				});
+
+				// When exiting overview mode (Esc key or clicking a slide)
+				deck.on("overviewhidden", () => {
+					// Stop observing to restore normal slide visibility behavior
+					if (overviewObserver) {
+						overviewObserver.disconnect();
+						overviewObserver = null;
+					}
+				});
 			});
 		</script>
 	</body>

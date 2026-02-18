@@ -33,6 +33,12 @@ body {
 	box-sizing: border-box;
 }
 
+/* Overview mode - ensure all slides are visible */
+.reveal.overview .slides section {
+	opacity: 1 !important;
+	visibility: visible !important;
+}
+
 /* Vertical stack wrapper - no padding */
 .reveal .slides > section > section {
 	padding: 60px 80px;
