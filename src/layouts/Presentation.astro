@@ -1,0 +1,49 @@
+---
+import BaseHead from "@/components/BaseHead.astro";
+import ThemeProvider from "@/components/ThemeProvider.astro";
+import { siteConfig } from "@/site.config";
+import type { SiteMeta } from "@/types";
+import "@/styles/slides.css";
+
+interface Props {
+	meta: SiteMeta;
+}
+
+const {
+	meta: { description = siteConfig.description, ogImage, title },
+} = Astro.props;
+---
+
+<html class="scroll-smooth" lang={siteConfig.lang}>
+	<head>
+		<BaseHead description={description} ogImage={ogImage} title={title} />
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css" />
+	</head>
+	<body>
+		<ThemeProvider />
+		<div class="reveal">
+			<div class="slides">
+				<slot />
+			</div>
+		</div>
+
+		<script>
+			import Reveal from "reveal.js";
+
+			document.addEventListener("DOMContentLoaded", () => {
+				const deck = new Reveal({
+					hash: true,
+					slideNumber: true,
+					progress: true,
+					center: false,
+					transition: "slide",
+					backgroundTransition: "fade",
+					width: "100%",
+					height: "100%",
+					margin: 0,
+				});
+				deck.initialize();
+			});
+		</script>
+	</body>
+</html>

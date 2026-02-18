@@ -1,0 +1,55 @@
+---
+interface Props {
+	vertical?: boolean;
+}
+
+const { vertical = true } = Astro.props;
+---
+
+{
+	vertical ? (
+		<section>
+			<section>
+				<h2>About Layer</h2>
+				<ul>
+					<li>Construction management platform</li>
+					<li>Used by architecture firms and job sites worldwide</li>
+					<li>Complex data relationships at scale</li>
+					<li>Offline-first requirements</li>
+				</ul>
+			</section>
+
+			<section>
+				<h2>About Me</h2>
+				<slot name="about-me">
+					<ul>
+						<li>Engineering @ Layer</li>
+						<li>Building offline-capable web apps</li>
+					</ul>
+				</slot>
+			</section>
+		</section>
+	) : (
+		<>
+			<section>
+				<h2>About Layer</h2>
+				<ul>
+					<li>Construction management platform</li>
+					<li>Used by architecture firms and job sites worldwide</li>
+					<li>Complex data relationships at scale</li>
+					<li>Offline-first requirements</li>
+				</ul>
+			</section>
+
+			<section>
+				<h2>About Me</h2>
+				<slot name="about-me">
+					<ul>
+						<li>Engineering @ Layer</li>
+						<li>Building offline-capable web apps</li>
+					</ul>
+				</slot>
+			</section>
+		</>
+	)
+}

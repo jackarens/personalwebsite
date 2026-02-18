@@ -4,12 +4,13 @@ description: "Our journey implementing a local-first architecture at Layer - cov
 publishDate: "2026-02-17"
 updatedDate: "17 Feb 2026"
 tags: ["software-architecture", "local-first", "web-development", "offline"]
+slidesUrl: "/slides/local-first"
 pinned: true
 ---
 
 ## Why this Article
 
-Our journey to implementing a local first web application at [Layer](https://layer.team) started as way to resolve issues with having the data we wanted for clients readily accessible, and turned into a long, comprehensive architecture buildout with quite a few obstacles. Along the way, we were inspired by resources put out there on similar journeys at [Linear](https://linear.app/now/scaling-the-linear-sync-engine) and even [blog posts from smaller companies like us](https://marcoapp.io/blog/offline-first-landscape), so I thought the right thing to do was to pay it forward. This article is a write-up of our experience building a local-first architecture for Layer, a construction management platform used in architecture firms and on job sites around the world. I'll cover the context that led us to this decision, the challenges we faced, and the solutions we implemented.
+Our journey to implementing a local first web application at [Layer](https://layer.team) started as a way to resolve issues with having the data we wanted for clients readily accessible, and turned into a long, comprehensive architecture buildout with quite a few obstacles. Along the way, we were inspired by resources put out there on similar journeys at [Linear](https://linear.app/now/scaling-the-linear-sync-engine) and even [blog posts from smaller companies like us](https://marcoapp.io/blog/offline-first-landscape), so I thought the right thing to do was to pay it forward. This article is a write-up of our experience building a local-first architecture for Layer, a construction management platform used in architecture firms and on job sites around the world. I'll cover the context that led us to this decision, the challenges we faced, and the solutions we implemented.
 
 ## Introduction
 

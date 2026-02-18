@@ -59,6 +59,11 @@ export default {
 							},
 						},
 						/* Table */
+						table: {
+							display: "block",
+							overflowX: "auto",
+							maxWidth: "100%",
+						},
 						"tbody tr": {
 							borderBottomWidth: "none",
 						},

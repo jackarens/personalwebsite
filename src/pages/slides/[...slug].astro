@@ -1,0 +1,28 @@
+---
+import { getCollection, render } from "astro:content";
+import Presentation from "@/layouts/Presentation.astro";
+
+export async function getStaticPaths() {
+	const slides = await getCollection("slides");
+	return slides.map((entry) => {
+		// The id will be like "local-first/_slides" - extract the folder name
+		const slug = entry.id.replace(/\/_slides$/, "");
+		return {
+			params: { slug },
+			props: { entry },
+		};
+	});
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+---
+
+<Presentation
+	meta={{
+		title: entry.data.title,
+		description: entry.data.description ?? entry.data.title,
+	}}
+>
+	<Content />
+</Presentation>

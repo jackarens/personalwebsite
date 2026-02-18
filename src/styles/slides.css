@@ -1,0 +1,255 @@
+/* Reveal.js theme matching the site */
+
+/* Full viewport background */
+html,
+body {
+	margin: 0;
+	padding: 0;
+	width: 100%;
+	height: 100%;
+	background-color: var(--color-global-bg);
+}
+
+.reveal-viewport {
+	background-color: var(--color-global-bg);
+}
+
+.reveal {
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+	font-size: 24px;
+	color: var(--color-global-text);
+	background-color: var(--color-global-bg);
+}
+
+.reveal .slides {
+	text-align: left;
+}
+
+.reveal .slides section {
+	background-color: var(--color-global-bg);
+	padding: 60px 80px;
+	top: 0 !important;
+	height: 100%;
+	box-sizing: border-box;
+}
+
+/* Vertical stack wrapper - no padding */
+.reveal .slides > section > section {
+	padding: 60px 80px;
+}
+
+.reveal .slides > section:has(> section) {
+	padding: 0;
+}
+
+.reveal section.title-slide {
+  top: unset;
+  display: flex !important;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;  
+}
+
+/* Headings */
+.reveal h1,
+.reveal h2,
+.reveal h3,
+.reveal h4,
+.reveal h5,
+.reveal h6 {
+	color: var(--color-accent);
+	font-weight: 600;
+	margin-bottom: 0.5em;
+	text-transform: none;
+	letter-spacing: normal;
+}
+
+/* Hide autolink anchors in headings */
+.reveal h1 a,
+.reveal h2 a,
+.reveal h3 a,
+.reveal h4 a,
+.reveal h5 a,
+.reveal h6 a {
+	color: inherit;
+	text-decoration: none;
+	pointer-events: none;
+}
+
+.reveal h1 a::before,
+.reveal h2 a::before,
+.reveal h3 a::before,
+.reveal h4 a::before,
+.reveal h5 a::before,
+.reveal h6 a::before {
+	display: none;
+}
+
+.reveal h1 {
+	font-size: 2.5em;
+}
+
+.reveal h2 {
+	font-size: 1.8em;
+}
+
+.reveal h3 {
+	font-size: 1.4em;
+}
+
+/* Links */
+.reveal a {
+	color: var(--color-accent);
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
+.reveal a:hover {
+	text-decoration-thickness: 2px;
+}
+
+/* Code */
+.reveal code {
+	font-family: inherit;
+	background: rgba(128, 128, 128, 0.15);
+	border: 1px dotted #666;
+	border-radius: 2px;
+	padding-inline: 4px;
+	font-size: 0.9em;
+}
+
+.reveal pre {
+	box-shadow: none;
+	font-size: 0.55em;
+	width: 100%;
+}
+
+.reveal pre code {
+	display: block;
+	padding: 1em;
+	max-height: 500px;
+	overflow: auto;
+	border: 1px solid #666;
+	border-radius: 4px;
+}
+
+/* Lists */
+.reveal ul,
+.reveal ol {
+	display: block;
+	margin-left: 1em;
+}
+
+.reveal li {
+	margin-bottom: 0.5em;
+}
+
+/* Blockquotes */
+.reveal blockquote {
+	border-left: 3px solid var(--color-accent);
+	padding-left: 1em;
+	font-style: italic;
+	color: var(--color-quote);
+	margin: 1em 0;
+	width: 100%;
+	box-shadow: none;
+	background: none;
+}
+
+/* Images */
+.reveal img {
+	max-width: 100%;
+	max-height: 60vh;
+	border: none;
+	box-shadow: none;
+}
+
+/* Tables */
+.reveal table {
+	margin: 1em 0;
+	border-collapse: collapse;
+}
+
+.reveal table th,
+.reveal table td {
+	padding: 0.5em 1em;
+	border-bottom: 1px dashed #666;
+}
+
+.reveal table th {
+	font-weight: 700;
+}
+
+/* Progress bar */
+.reveal .progress {
+	background: rgba(128, 128, 128, 0.2);
+	height: 4px;
+}
+
+.reveal .progress span {
+	background: var(--color-accent);
+}
+
+/* Slide numbers */
+.reveal .slide-number {
+	font-family: inherit;
+	font-size: 14px;
+	color: var(--color-global-text);
+	background: transparent;
+	right: 16px;
+	bottom: 16px;
+}
+
+/* Controls */
+.reveal .controls {
+	color: var(--color-accent);
+}
+
+/* Fragment highlights */
+.reveal .fragment.highlight-current-green.current-fragment {
+	color: var(--color-accent);
+}
+
+/* Speaker notes indicator */
+.reveal aside.notes {
+	display: none;
+}
+
+/* Title slide styling */
+.reveal section.title-slide h1 {
+	font-size: 2.8em;
+	margin-bottom: 0.3em;
+}
+
+.reveal section.title-slide .subtitle {
+	font-size: 1.2em;
+	color: var(--color-accent);
+	margin-bottom: 2em;
+}
+
+.reveal section.title-slide .author {
+	font-size: 1em;
+	opacity: 0.8;
+}
+
+/* Section header slides */
+.reveal section.section-header {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	text-align: center;
+}
+
+.reveal section.section-header h2 {
+	font-size: 2.2em;
+}
+
+/* Title slide - centered */
+.reveal section.title-slide {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	text-align: center;
+}

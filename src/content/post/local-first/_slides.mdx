@@ -1,0 +1,236 @@
+---
+title: "The Architecture of Local-first Web Apps"
+description: "Building offline-capable web applications"
+postSlug: "local-first/local-first-web-apps"
+---
+
+import { Image } from "astro:assets";
+import Slide from "@/components/slides/Slide.astro";
+import Fragment from "@/components/slides/Fragment.astro";
+import IntroSlides from "@/components/slides/IntroSlides.astro";
+
+import issuesTable from "./issues-table.png";
+import architectureDiagram from "./architecture-diagram.png";
+import databaseStructure from "./database-structure.png";
+import xkcd378 from "./xkcd-378.png";
+
+<Slide class="title-slide">
+# The Architecture of Local-first Web Apps
+
+<p class="subtitle">Building offline-capable web applications</p>
+<p class="author">Jack Arens</p>
+</Slide>
+
+<IntroSlides />
+
+<Slide>
+## Agenda
+
+1. The Problem
+2. Solutions Considered
+3. Why Local-first Won
+4. Technical Implementation
+5. Challenges & Solutions
+</Slide>
+
+<Slide class="section-header">
+## The Problem
+</Slide>
+
+<Slide>
+## Data Relationships at Scale
+
+- <Fragment>**Issues**: description, cost, photos, assignees</Fragment>
+- <Fragment>**Users**: home base, specialty, contact info</Fragment>
+- <Fragment>Users expect to see related data *inline*</Fragment>
+- <Fragment>At 10k+ issues × 100s of users = 💀</Fragment>
+</Slide>
+
+<Slide>
+## Issues Table Example
+
+<Image src={issuesTable} alt="Issues table showing data relationships" width={700} />
+</Slide>
+
+<Slide>
+## The "Load on Demand" Trap
+
+- <Fragment>Limited data in table views</Fragment>
+- <Fragment>Rich data only on click-through</Fragment>
+- <Fragment>Same user data loaded multiple times</Fragment>
+- <Fragment>Redundant requests, slower UX</Fragment>
+</Slide>
+
+<Slide>
+## Additional Pain Points
+
+- **Data drift**: stale data from failed propagations
+- **Offline needs**: construction sites don't have WiFi
+- Firestore offline wasn't enough control
+</Slide>
+
+<Slide class="section-header">
+## Solutions Considered
+</Slide>
+
+<Slide>
+## Comparison
+
+| Approach | Offline | Complexity | Scale |
+| -------- | :-----: | :--------: | :---: |
+| Propagation | ❌ | High | Poor |
+| On-Demand | ❌ | Medium | Variable |
+| Local-first | ✅ | High | Excellent |
+</Slide>
+
+<Slide>
+## Propagation
+
+- <Fragment>Copy related fields to parent documents</Fragment>
+- <Fragment>Works until users want *all* the data</Fragment>
+- <Fragment>Exponential growth in storage</Fragment>
+- <Fragment>Mounting tech debt</Fragment>
+</Slide>
+
+<Slide>
+## On-Demand Loading
+
+<Image src={xkcd378} alt="XKCD 378 - Real Programmers" width={500} />
+
+- <Fragment>Single endpoint loads all page data</Fragment>
+- <Fragment>Complex, bug-prone reducers</Fragment>
+- <Fragment>**Zero offline support**</Fragment>
+</Slide>
+
+<Slide>
+## Local-first
+
+> "What if all the data was just always loaded?"
+
+- <Fragment>1,000–10,000 entries per project</Fragment>
+- <Fragment>Feasible to load upfront</Fragment>
+- <Fragment>Sync engine handles updates</Fragment>
+</Slide>
+
+<Slide class="section-header">
+## Why Local-first Won
+</Slide>
+
+<Slide>
+## Our Advantages
+
+1. <Fragment>**Project-scoped data**: natural batching</Fragment>
+2. <Fragment>**Users expect heavy apps** (Revit, etc.)</Fragment>
+3. <Fragment>**Offline is a must** for job sites</Fragment>
+</Slide>
+
+<Slide>
+## Bonus Capabilities
+
+- Local filtering & sorting
+- Shared filter logic (front-end + back-end)
+- Consistent behavior online/offline
+</Slide>
+
+<Slide>
+## Why Replicache?
+
+- <Fragment>Flexible: we define push/pull endpoints</Fragment>
+- <Fragment>IndexedDB storage (battle-tested)</Fragment>
+- <Fragment>Observable hooks for UI updates</Fragment>
+- <Fragment>NoSQL-friendly</Fragment>
+</Slide>
+
+<Slide class="section-header">
+## Technical Implementation
+</Slide>
+
+<Slide>
+## Per-Space Versioning
+
+<Image src={databaseStructure} alt="Database structure diagram" width={600} />
+
+- Each project has its own version (`rcVersion`)
+- Each element has its own version
+- Bulk updates in single transaction
+</Slide>
+
+<Slide>
+## Architecture Overview
+
+<Image src={architectureDiagram} alt="High-level architecture diagram" width={650} />
+</Slide>
+
+<Slide>
+## Architecture Components
+
+1. **Client**: Replicache service wraps all data access
+2. **Primary DB**: Firestore (source of truth)
+3. **Push**: Client → Server updates
+4. **Pull**: Server → Client sync
+5. **External**: Cloud Functions, APIs
+</Slide>
+
+<Slide>
+## Critical Rule
+
+> **Nothing** gets written to Firestore without going through the transaction and versioning system.
+</Slide>
+
+<Slide class="section-header">
+## Challenges & Solutions
+</Slide>
+
+<Slide>
+## Bootstrapping Large Projects
+
+**Problem**: 40k+ element projects = ~100MB, slow initial load
+
+- <Fragment>Multiple round trips (1k–10k batches)</Fragment>
+- <Fragment>Serialization time on each request</Fragment>
+</Slide>
+
+<Slide>
+## The Insight
+
+> Sync engines can send *slightly stale* data initially.
+> The final pull catches up.
+</Slide>
+
+<Slide>
+## Solution: Pre-serialized Bundles
+
+- <Fragment>Pre-serialize project data to storage bucket</Fragment>
+- <Fragment>Client fetches zipped bundle directly</Fragment>
+- <Fragment>70–90% of data instantly</Fragment>
+- <Fragment>Background sync for latest changes</Fragment>
+</Slide>
+
+<Slide>
+## Filtering & Sorting
+
+**Problem**: Loading all data into memory for sort is slow
+
+- <Fragment>Solution: **LokiDB** for in-memory indexing</Fragment>
+- <Fragment>Only index data needed for filter/sort</Fragment>
+- <Fragment>Watch Replicache for live updates</Fragment>
+</Slide>
+
+<Slide class="section-header">
+## Key Takeaways
+</Slide>
+
+<Slide>
+## Summary
+
+1. <Fragment>Local-first = all data available, always</Fragment>
+2. <Fragment>Sync engines handle eventual consistency</Fragment>
+3. <Fragment>Pre-serialized bundles speed up bootstrap</Fragment>
+4. <Fragment>In-memory indexing (LokiDB) for fast queries</Fragment>
+</Slide>
+
+<Slide class="section-header">
+## Questions?
+
+<p style="margin-top: 1em; opacity: 0.7;">layer.team</p>
+</Slide>

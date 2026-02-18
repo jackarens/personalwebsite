@@ -12,7 +12,7 @@ const baseSchema = z.object({
 });
 
 const post = defineCollection({
-	loader: glob({ base: "./src/content/post", pattern: "**/*.{md,mdx}" }),
+	loader: glob({ base: "./src/content/post", pattern: ["**/*.{md,mdx}", "!**/_*.mdx"] }),
 	schema: ({ image }) =>
 		baseSchema.extend({
 			description: z.string(),
@@ -24,6 +24,7 @@ const post = defineCollection({
 				.optional(),
 			draft: z.boolean().default(false),
 			ogImage: z.string().optional(),
+			slidesUrl: z.string().optional(),
 			tags: z.array(z.string()).default([]).transform(removeDupsAndLowerCase),
 			publishDate: z
 				.string()
@@ -45,4 +46,12 @@ const tag = defineCollection({
 	}),
 });
 
-export const collections = { post, tag };
+const slides = defineCollection({
+	loader: glob({ base: "./src/content/post", pattern: "**/_slides.mdx" }),
+	schema: baseSchema.extend({
+		description: z.string().optional(),
+		postSlug: z.string().optional(),
+	}),
+});
+
+export const collections = { post, tag, slides };
