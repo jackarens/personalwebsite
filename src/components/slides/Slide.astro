@@ -1,11 +1,12 @@
 ---
 interface Props {
 	class?: string;
+	centerHeader?: boolean;
 }
 
-const { class: className } = Astro.props;
+const { class: className, centerHeader = false } = Astro.props;
 ---
 
-<section class={className}>
+<section class={`${className ?? ""} ${centerHeader ? "center-header" : ""}`}>
 	<slot />
 </section>

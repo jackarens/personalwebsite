@@ -15,8 +15,10 @@ body {
 }
 
 .reveal {
-	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-	font-size: 24px;
+	font-family:
+		ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+		monospace;
+	font-size: 32px;
 	color: var(--color-global-text);
 	background-color: var(--color-global-bg);
 }
@@ -26,6 +28,8 @@ body {
 }
 
 .reveal .slides section {
+	display: flex !important;
+	flex-direction: column;
 	background-color: var(--color-global-bg);
 	padding: 60px 80px;
 	top: 0 !important;
@@ -49,11 +53,11 @@ body {
 }
 
 .reveal section.title-slide {
-  top: unset;
-  display: flex !important;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;  
+	top: unset;
+	display: flex !important;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
 }
 
 /* Headings */
@@ -92,15 +96,24 @@ body {
 }
 
 .reveal h1 {
-	font-size: 2.5em;
+	font-size: 3em;
 }
 
 .reveal h2 {
-	font-size: 1.8em;
+	font-size: 2.2em;
 }
 
 .reveal h3 {
-	font-size: 1.4em;
+	font-size: 1.6em;
+}
+
+.reveal .center-header h1,
+.reveal .center-header h2,
+.reveal .center-header h3,
+.reveal .center-header h4,
+.reveal .center-header h5,
+.reveal .center-header h6 {
+	text-align: center;
 }
 
 /* Links */
@@ -146,8 +159,16 @@ body {
 	margin-left: 1em;
 }
 
+.reveal ul {
+	list-style-type: disc;
+}
+
+.reveal ol {
+	list-style-type: decimal;
+}
+
 .reveal li {
-	margin-bottom: 0.5em;
+	margin-bottom: 1em;
 }
 
 /* Blockquotes */
@@ -165,7 +186,7 @@ body {
 /* Images */
 .reveal img {
 	max-width: 100%;
-	max-height: 60vh;
+	max-height: 100%;
 	border: none;
 	box-shadow: none;
 }
@@ -223,18 +244,18 @@ body {
 
 /* Title slide styling */
 .reveal section.title-slide h1 {
-	font-size: 2.8em;
+	font-size: 3.2em;
 	margin-bottom: 0.3em;
 }
 
 .reveal section.title-slide .subtitle {
-	font-size: 1.2em;
+	font-size: 1.4em;
 	color: var(--color-accent);
 	margin-bottom: 2em;
 }
 
 .reveal section.title-slide .author {
-	font-size: 1em;
+	font-size: 1.2em;
 	opacity: 0.8;
 }
 
@@ -248,7 +269,7 @@ body {
 }
 
 .reveal section.section-header h2 {
-	font-size: 2.2em;
+	font-size: 2.6em;
 }
 
 /* Title slide - centered */
@@ -258,4 +279,51 @@ body {
 	justify-content: center;
 	align-items: center;
 	text-align: center;
+}
+
+/* Two-column layout */
+.reveal .two-column {
+	display: flex;
+	gap: 2em;
+	align-items: center;
+	margin-top: 1em;
+	height: calc(100% - 3em);
+}
+
+.reveal .two-column div {
+	flex: 1;
+	margin: 0;
+}
+
+/* Stacked elements */
+.reveal .slides section:has(.r-stack) {
+	display: flex !important;
+	flex-direction: column;
+}
+
+.reveal .r-stack {
+	flex: 1 1 0;
+	min-height: 0;
+	display: grid;
+	place-items: center;
+	max-width: 100%;
+}
+
+.reveal .r-stack > * {
+	grid-area: 1 / 1;
+	max-width: 100%;
+	max-height: 100%;
+	object-fit: contain;
+}
+
+.reveal .r-stack video {
+	width: 100%;
+	height: auto;
+	border-radius: 8px;
+}
+
+.reveal .slides section .portrait {
+	display: flex;
+	max-height: 100%;
+	max-width: 100%;
 }

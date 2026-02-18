@@ -1,11 +1,12 @@
 ---
 interface Props {
 	class?: string;
+	as?: "span" | "li" | "div";
 }
 
-const { class: className } = Astro.props;
+const { class: className, as: Element = "span" } = Astro.props;
 ---
 
-<span class:list={["fragment", className]}>
+<Element class:list={["fragment", className]}>
 	<slot />
-</span>
+</Element>

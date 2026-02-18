@@ -8,11 +8,40 @@ import { Image } from "astro:assets";
 import Slide from "@/components/slides/Slide.astro";
 import Fragment from "@/components/slides/Fragment.astro";
 import IntroSlides from "@/components/slides/IntroSlides.astro";
+import Callout from "@/components/slides/Callout.astro";
+import VerticalStack from "@/components/slides/VerticalStack.astro";
 
 import issuesTable from "./issues-table.png";
 import architectureDiagram from "./architecture-diagram.png";
 import databaseStructure from "./database-structure.png";
 import xkcd378 from "./xkcd-378.png";
+import exponentialGrowth from "./exponential-growth.png";
+import localFiles from "./local-files.jpg";
+import how01 from "./how-01.svg";
+import how02 from "./how-02.svg";
+import how03 from "./how-03.svg";
+import how04 from "./how-04.svg";
+import how05 from "./how-05.svg";
+
+export const codeSampleNotes = {
+	replicacheInit: `Show Replicache initialization
+    const rep = new Replicache({
+      name: \`project-\${projectId}\`,
+      pushURL: '/api/replicache/push',
+      pullURL: '/api/replicache/pull',
+      mutators: { createIssue, updateIssue, ... }
+    });
+    And/or show a useSubscribe hook for reactive UI updates`,
+	pushPull: `Show push/pull endpoint pseudocode
+    Push: receive mutations, validate, apply in transaction, increment version
+    Pull: query elements where rcVersion > clientVersion, return patch`,
+	lokiDB: `Show LokiDB query example
+    // Create indexed collection
+    const issues = loki.addCollection('issues', { indices: ['status', 'assigneeId'] });
+    // Fast filtered query
+    const openIssues = issues.find({ status: 'open', assigneeId: currentUser.id });
+    And/or show how Replicache watch syncs to LokiDB`,
+};
 
 <Slide class="title-slide">
 # The Architecture of Local-first Web Apps
@@ -26,80 +55,113 @@ import xkcd378 from "./xkcd-378.png";
 <Slide>
 ## Agenda
 
-1. The Problem
-2. Solutions Considered
-3. Why Local-first Won
-4. Technical Implementation
-5. Challenges & Solutions
+<ol class="p-12">
+  <Fragment as="li">The Problem</Fragment>
+  <Fragment as="li">Solutions Considered</Fragment>
+  <Fragment as="li">Why Local-first Won</Fragment>
+  <Fragment as="li">Technical Implementation</Fragment>
+  <Fragment as="li">Challenges & Solutions</Fragment>
+</ol>
 </Slide>
 
-<Slide class="section-header">
+<Slide centerHeader={true}>
 ## The Problem
+
+<Fragment as="h3">Data Relationships at Scale</Fragment>
+
+<div class="two-column">
+<div>
+<ul class="p-12">
+  <Fragment as="li">**Issues**: description, cost, photos, assignees</Fragment>
+  <Fragment as="li">**Users**: home base, specialty, contact info</Fragment>
+  <Fragment as="li">Users expect to see related data *inline*</Fragment>
+  <Fragment as="li">At 10k+ issues × 100s of users = 💀</Fragment>
+</ul>
+  </div>
+  <div>
+    <Image src={exponentialGrowth} alt="Exponential growth diagram" layout='full-width' fit='contain' class="fragment"/>
+  </div>
+</div>
 </Slide>
 
 <Slide>
-## Data Relationships at Scale
+## Example
 
-- <Fragment>**Issues**: description, cost, photos, assignees</Fragment>
-- <Fragment>**Users**: home base, specialty, contact info</Fragment>
-- <Fragment>Users expect to see related data *inline*</Fragment>
-- <Fragment>At 10k+ issues × 100s of users = 💀</Fragment>
+<div class="r-stack">
+<Fragment as="div" class="w-full h-full">
+ <iframe class="layer-embedded-shared-view" src="https://public-staging.layer.team/view/ydb1bM0Y1tksene9EiXq?hideBorder=true" title="All Issues" width="100%" height="100%"> </iframe> 
+</Fragment>
+<Fragment as="div" class="w-full h-full">
+ <iframe class="layer-embedded-shared-view" src="https://public-staging.layer.team/view/HD8DwjR1GoAlsPMgIHgU?hideBorder=true" title="All Users" width="100%" height="100%"> </iframe>
+ </Fragment>
+</div>
 </Slide>
 
 <Slide>
-## Issues Table Example
-
-<Image src={issuesTable} alt="Issues table showing data relationships" width={700} />
-</Slide>
-
-<Slide>
-## The "Load on Demand" Trap
-
-- <Fragment>Limited data in table views</Fragment>
-- <Fragment>Rich data only on click-through</Fragment>
-- <Fragment>Same user data loaded multiple times</Fragment>
-- <Fragment>Redundant requests, slower UX</Fragment>
-</Slide>
-
-<Slide>
-## Additional Pain Points
-
-- **Data drift**: stale data from failed propagations
-- **Offline needs**: construction sites don't have WiFi
-- Firestore offline wasn't enough control
+	## How This Impacted Users
+	<ul class="p-12">
+		<Fragment as="li">Limited data in table views</Fragment>
+		<Fragment as="li">Rich data only on click-through</Fragment>
+		<Fragment as="li">Same user data loaded multiple times</Fragment>
+		<Fragment as="li">Redundant requests, slower UX</Fragment>
+	</ul>
+	<Fragment as="h3">Additional Pain Points </Fragment>
+	<ul class="p-12">
+		<Fragment as="li">
+			**Data drift**: stale data from failed propagations
+		</Fragment>
+		<Fragment as="li">**Offline needs**: field sites don't have WiFi</Fragment>
+		<ul>
+			<Fragment as="li">Firestore offline wasn't enough control</Fragment>
+		</ul>
+	</ul>
 </Slide>
 
 <Slide class="section-header">
 ## Solutions Considered
+
+| Approach          | Offline | Complexity |   Scale   |
+| ----------------- | :-----: | :--------: | :-------: |
+| Direct DB Calls   |   ❌    |    Low     |   Poor    |
+| Propagation       |   ❌    |   Medium   |   Poor    |
+| On-Demand Reducer |   ❌    |    High    | Variable  |
+| Local-first       |   ✅    |   Medium   | Excellent |
+
 </Slide>
 
-<Slide>
-## Comparison
-
-| Approach | Offline | Complexity | Scale |
-| -------- | :-----: | :--------: | :---: |
-| Propagation | ❌ | High | Poor |
-| On-Demand | ❌ | Medium | Variable |
-| Local-first | ✅ | High | Excellent |
-</Slide>
-
-<Slide>
+<Slide centerHeader={true}>
 ## Propagation
 
-- <Fragment>Copy related fields to parent documents</Fragment>
-- <Fragment>Works until users want *all* the data</Fragment>
-- <Fragment>Exponential growth in storage</Fragment>
-- <Fragment>Mounting tech debt</Fragment>
+<ul class="p-12">
+	<Fragment as="li">Copy related fields to parent documents</Fragment>
+	<Fragment as="li">Works until users want *all* the data</Fragment>
+	<Fragment as="li">Exponential growth in storage</Fragment>
+	<Fragment as="li">Mounting tech debt</Fragment>
+</ul>
 </Slide>
 
-<Slide>
+<Slide centerHeader={true}>
 ## On-Demand Loading
 
-<Image src={xkcd378} alt="XKCD 378 - Real Programmers" width={500} />
+<div class="r-stack">
+	<ul class="p-12">
+		<Fragment as="li">Single endpoint loads all page data</Fragment>
+		<Fragment as="li">Most traditional solution</Fragment>
+		<Fragment as="li">Places least demand on user devices</Fragment>
+		<Fragment as="li">Complex, bug-prone reducers</Fragment>
+		<Fragment as="div">
+			<Callout type="warning" title="Zero offline support"></Callout>
+		</Fragment>
+	</ul>
+	<Image
+		src={xkcd378}
+		alt="XKCD 378 - Real Programmers"
+		layout="full-width"
+		fit="contain"
+		class="fragment"
+	/>
+</div>
 
-- <Fragment>Single endpoint loads all page data</Fragment>
-- <Fragment>Complex, bug-prone reducers</Fragment>
-- <Fragment>**Zero offline support**</Fragment>
 </Slide>
 
 <Slide>
@@ -107,130 +169,471 @@ import xkcd378 from "./xkcd-378.png";
 
 > "What if all the data was just always loaded?"
 
-- <Fragment>1,000–10,000 entries per project</Fragment>
-- <Fragment>Feasible to load upfront</Fragment>
-- <Fragment>Sync engine handles updates</Fragment>
+<div class="r-stack">
+  <ul class="p-12">
+    <Fragment as="li">Loading data has no network cost</Fragment>
+    <Fragment as="li">Asynchronous by default, but not in practice</Fragment>
+    <Fragment as="li">Data is read and manipulated locally</Fragment>
+    <Fragment as="div">
+      <Callout type="tip" title="Sync engine handles updates">
+        Provides stability, offline support, and guaranteed eventual consistency
+      </Callout>
+    </Fragment>
+  </ul> 
+  <Image
+    src={localFiles}
+    alt="I want to save to my computer, not the cloud"
+    layout="full-width"
+    fit="contain"
+    class="fragment"
+  />
+</div>
 </Slide>
 
-<Slide class="section-header">
+<Slide>
 ## Why Local-first Won
+<div class="two-column !items-start">
+  <div class="pt-12">
+  <Fragment as="h3">Our Advantages/Situation</Fragment>
+    <ol class="p-12">
+      <Fragment as="li">**Project-scoped data**: natural batching</Fragment>
+      <ul>
+        <Fragment as="li">~1,000–10,000 entries per project</Fragment>
+        <Fragment as="li">Feasible to load upfront</Fragment>
+      </ul>
+      <Fragment as="li">**Users expect heavy apps** (Revit, etc.)</Fragment>
+      <Fragment as="li">**Offline is a must** for job sites</Fragment>
+    </ol>
+  </div>
+  <div class="pt-12">
+  <Fragment as="h3">Bonus Capabilities</Fragment>
+    <ul class="p-12">
+      <Fragment as="li">Custom filtering & sorting</Fragment>
+      <ul>
+        <Fragment as="li">Shared filter logic (front-end + back-end)</Fragment>
+        <Fragment as="li">Consistent behavior online/offline</Fragment>
+      </ul>
+      <Fragment as="li">No loading spinners beyond initialization</Fragment>
+      <Fragment as="li">Instant Updates (No calls to ES)</Fragment>
+      <Fragment as="li">Enables stateful features</Fragment>
+    </ul>
+  </div>
+</div>
+
 </Slide>
 
 <Slide>
-## Our Advantages
+## Choosing a Sync Engine
 
-1. <Fragment>**Project-scoped data**: natural batching</Fragment>
-2. <Fragment>**Users expect heavy apps** (Revit, etc.)</Fragment>
-3. <Fragment>**Offline is a must** for job sites</Fragment>
-</Slide>
+Local-first needs a **sync engine** to handle data flow
 
-<Slide>
-## Bonus Capabilities
+<div class="m-auto mt-32 flex w-2/3 max-w-6xl flex-col gap-4">
+	<div class="fragment flex flex-col items-center justify-center gap-2 rounded-lg border border-gray-500 bg-gray-500/10 p-4">
+		<div class="mb-2 text-4xl">🔧</div>
+		<div class="font-semibold">Build from scratch</div>
+		<div class="text-sm opacity-70">Full control, massive effort</div>
+	</div>
+	<div class="fragment flex flex-col items-center justify-center gap-2 rounded-lg border border-orange-500/30 bg-orange-500/10 p-4">
+		<img src="/logos/firebase.svg" alt="Firebase" class="mb-2 h-12" />
+		<div class="font-semibold">Firebase</div>
+		<div class="text-sm opacity-70">Limited control, vendor lock-in</div>
+	</div>
+	<div class="fragment flex flex-col items-center justify-center gap-2 rounded-lg border border-pink-500 bg-pink-500/10 p-4">
+		<img src="/logos/replicache.svg" alt="Replicache" class="mb-2 h-12" />
+		<div class="font-semibold text-pink-400">Replicache</div>
+		<div class="text-sm opacity-70">Flexible, client-defined sync</div>
+	</div>
+	<div class="fragment flex flex-col items-center justify-center gap-2 rounded-lg border border-green-500 bg-green-500/10 p-4">
+		<div class="mb-2 flex h-12 items-center gap-2">
+			<img src="/logos/electricsql.jpg" alt="ElectricSQL" class="h-8" />
+			<img src="/logos/powersync.svg" alt="PowerSync" class="h-8" />
+		</div>
+		<div class="font-semibold text-green-400">Others</div>
+		<div class="text-sm opacity-70">
+			Emerging options (ElectricSQL, PowerSync)
+		</div>
+	</div>
+	<div class="fragment flex flex-col items-center justify-center gap-2 rounded-lg border border-gray-500 bg-gray-500/10 p-4">
+		<img src="/logos/zero.svg" alt="Zero" class="mb-2 h-12" />
+		<div class="font-semibold">Zero (Replicache Successor)</div>
+		<div class="text-sm opacity-70">
+			Released after we started implementation - not designed for NoSQL
+		</div>
+	</div>
+</div>
 
-- Local filtering & sorting
-- Shared filter logic (front-end + back-end)
-- Consistent behavior online/offline
 </Slide>
 
 <Slide>
 ## Why Replicache?
 
-- <Fragment>Flexible: we define push/pull endpoints</Fragment>
-- <Fragment>IndexedDB storage (battle-tested)</Fragment>
-- <Fragment>Observable hooks for UI updates</Fragment>
-- <Fragment>NoSQL-friendly</Fragment>
+<div class="r-stack">
+	<ul class="p-12">
+		<Fragment as="li">Flexible: we define push/pull endpoints</Fragment>
+		<Fragment as="li">Primarily a client library</Fragment>
+		<Fragment as="li">IndexedDB storage (battle-tested)</Fragment>
+		<Fragment as="li">Observable hooks for UI updates</Fragment>
+		<Fragment as="li">Built for NoSQL</Fragment>
+	</ul>
+</div>
+{/* See codeSampleNotes.replicacheInit */}
 </Slide>
 
-<Slide class="section-header">
-## Technical Implementation
+<Slide>
+## How Replicache?
+
+<div class="r-stack">
+	<Image
+		src={how01}
+		alt="Replicache downloading data"
+		class="fragment fade-in-then-out"
+	/>
+	<Image
+		src={how02}
+		alt="UI responding instantly"
+		class="fragment fade-in-then-out"
+	/>
+	<Image src={how03} alt="Syncing changes" class="fragment fade-in-then-out" />
+	<Image
+		src={how04}
+		alt="Merging conflicts"
+		class="fragment fade-in-then-out"
+	/>
+	<Image src={how05} alt="Offline support" class="fragment" />
+</div>
+
+</Slide>
+
+<VerticalStack>
+<Slide>
+## Architecture Overview
+
+<Image
+	src={architectureDiagram}
+	alt="High-level architecture diagram"
+	layout="full-width"
+	fit="contain"
+/>
+
+</Slide>
+
+<Slide>
+## Push & Pull Endpoints
+
+<div class="two-column items-start!">
+  <div>
+
+    ### Pull
+
+    <Fragment as="div">
+    ```ts
+    function pull(cookie):
+      // Get changes since client's last sync point
+      changes = getChangesSince(cookie)
+
+      // Build patches from changes
+      patches = buildPatches(changes)
+
+      newCookie = getCurrentVersionCookie()
+
+      // Return patches and new sync point
+      return { patches, cookie: newCookie }
+    ```
+    </Fragment>
+
+  </div>
+  <div>
+
+    ### Push
+
+    <Fragment as="div">
+    ```ts
+    function push(clientId, mutations):
+        for each mutation in mutations:
+            // Skip if already processed (idempotency)
+            if alreadyProcessed(clientId, mutation.id):
+            if !hasPermission(clientId, mutation):
+                continue
+
+            // Apply mutation to server state
+            applyMutation(mutation)
+            recordMutationProcessed(clientId, mutation.id)
+
+        return { success: true }
+      ```
+    </Fragment>
+
+  </div>
+</div>
+
+</Slide>
+
+</VerticalStack>
+
+<Slide>
+## Architecture Components
+
+<ol class="p-12">
+	<Fragment as="li">
+		**Client**: Replicache service wraps all data access
+	</Fragment>
+	<Fragment as="li">**Primary DB**: Firestore (source of truth)</Fragment>
+	<Fragment as="li">**Push**: Client → Server updates</Fragment>
+	<Fragment as="li">**Pull**: Server → Client sync</Fragment>
+	<Fragment as="li">**External**: Cloud Functions, APIs - anything not directly user driven</Fragment>
+	<Fragment>
+		<Callout type="warning" title="Critical Rule">
+			**Nothing** gets written to Firestore without going through the
+			transaction and versioning system.
+		</Callout>
+	</Fragment>
+</ol>
 </Slide>
 
 <Slide>
 ## Per-Space Versioning
 
-<Image src={databaseStructure} alt="Database structure diagram" width={600} />
-
-- Each project has its own version (`rcVersion`)
-- Each element has its own version
-- Bulk updates in single transaction
-</Slide>
-
-<Slide>
-## Architecture Overview
-
-<Image src={architectureDiagram} alt="High-level architecture diagram" width={650} />
-</Slide>
-
-<Slide>
-## Architecture Components
-
-1. **Client**: Replicache service wraps all data access
-2. **Primary DB**: Firestore (source of truth)
-3. **Push**: Client → Server updates
-4. **Pull**: Server → Client sync
-5. **External**: Cloud Functions, APIs
-</Slide>
-
-<Slide>
-## Critical Rule
-
-> **Nothing** gets written to Firestore without going through the transaction and versioning system.
+<div class="r-stack">
+	<ul class="p-12">
+		<Fragment as="li">Each project has its own version (`rcVersion`)</Fragment>
+		<Fragment as="li">Each element has its own version (`rcVersion`)</Fragment>
+		<Fragment as="li">Changes applied and cached locally without verions</Fragment>
+		<Fragment as="li">
+			Updates applied in a bulk transaction on the server, which adds
+			versioning
+		</Fragment>
+	</ul>
+	<Image
+		src={databaseStructure}
+		alt="Database structure diagram"
+		class="fragment"
+		layout="full-width"
+		fit="contain"
+	/>
+</div>
 </Slide>
 
 <Slide class="section-header">
+
 ## Challenges & Solutions
+
 </Slide>
 
+<VerticalStack>
 <Slide>
 ## Bootstrapping Large Projects
 
-**Problem**: 40k+ element projects = ~100MB, slow initial load
+**Problem**: 40k+ element projects = ~150 - 200MB, slow initial load
 
-- <Fragment>Multiple round trips (1k–10k batches)</Fragment>
-- <Fragment>Serialization time on each request</Fragment>
+<ul class="p-12">
+	<Fragment as="li">Multiple round trips (1k–10k batches)</Fragment>
+	<Fragment as="li">Serialization time on each request</Fragment>
+	<Fragment as="li">
+		Pull is called repeatedly until it returns no patches (complete)
+	</Fragment>
+	<Fragment>
+		<Callout type="tip" title="Key Insight">
+			Sync engines can send _slightly stale_ data initially - the final pull
+			catches up.
+		</Callout>
+	</Fragment>
+</ul>
+
+<Fragment as="h3"> Solution: Pre-serialized Bundles</Fragment>
+
+<ul class="p-12">
+	<Fragment as="li">Pre-serialize project data to storage bucket</Fragment>
+	<Fragment as="li">Client fetches zipped bundle directly</Fragment>
+	<Fragment as="li">70–90% of data instantly</Fragment>
+	<Fragment as="li">Background sync for latest changes</Fragment>
+	<Fragment as="li">Particularly helpful for projects that start out huge</Fragment>
+</ul>
 </Slide>
 
 <Slide>
-## The Insight
+## Bundle Loading Code
 
-> Sync engines can send *slightly stale* data initially.
-> The final pull catches up.
+<div class="two-column items-start!">
+  <div>
+
+    ### Client Side
+
+    <Fragment as="div">
+    ```ts
+    function handlePull(cookie):
+        changesSinceCookie = getChangesSince(cookie)
+
+        if cookie.fromVersion === 0:
+            // Fresh client - serve a pre-built bundle instead
+            bundleUrl = getLatestBundleUrl()
+            return { bundleUrl, cookie: bundleCookie }
+        else:
+            // Few changes - return incremental patches
+            patches = buildPatches(changesSinceCookie)
+            return { patches, cookie: currentCookie }
+    ```
+    </Fragment>
+
+  </div>
+  <div>
+
+    ### Server Side
+
+    <Fragment as="div">
+    ```ts
+    function pull():
+        lastCookie = getStoredCookie()
+
+        response = POST /pull { cookie: lastCookie }
+
+        if response.hasBundleUrl:
+            // Bundle exists in storage - load full snapshot
+            bundleData = downloadFromStorage(response.bundleUrl)
+            applyPatches(bundleData.patches)
+            storeCookie(bundleData.cookie)
+
+            // Pull again for changes since bundle was created
+            pull()
+        else:
+            // No bundle - apply incremental patches
+            applyPatches(response.patches)
+            storeCookie(response.cookie)
+      ```
+    </Fragment>
+
+  </div>
+</div>
+
 </Slide>
-
-<Slide>
-## Solution: Pre-serialized Bundles
-
-- <Fragment>Pre-serialize project data to storage bucket</Fragment>
-- <Fragment>Client fetches zipped bundle directly</Fragment>
-- <Fragment>70–90% of data instantly</Fragment>
-- <Fragment>Background sync for latest changes</Fragment>
-</Slide>
+</VerticalStack>
 
 <Slide>
 ## Filtering & Sorting
 
 **Problem**: Loading all data into memory for sort is slow
 
-- <Fragment>Solution: **LokiDB** for in-memory indexing</Fragment>
-- <Fragment>Only index data needed for filter/sort</Fragment>
-- <Fragment>Watch Replicache for live updates</Fragment>
+<ul class="p-12">
+	<Fragment as="li">Solution: **LokiDB** for in-memory indexing</Fragment>
+	<Fragment as="li">Only index data needed for filter/sort</Fragment>
+	<Fragment as="li">Watch Replicache for live updates</Fragment>
+</ul>
+<div class="two-column mt-0!">
+  <div>
+    <Fragment as="div">
+    ```ts
+    export interface LayerElement {
+      autoGenerateName?: LayerAutoGenerateNameOptions;
+      autoIncrementId?: number;
+      category: ContextItem<R>;
+      completed: boolean;
+      createdAt: number | T;
+      createdBy: R | string;
+      createdByRef: { email: string; id: string; name: string };
+      createdPhaseId?: string;
+      deletedAt?: number | T;
+      family: string;
+      fields: Record<string, any | LayerElementField<T, R>>;
+      id?: string;
+      modelRevitId: string;
+      name: string;
+      params: Record<string, LayerRevitParameterValue<T, R>>;
+      rcVersion?: number;
+      references?: { [key: string]: LayerReference<T, R> };
+      revitExternalId?: string;
+      revitId: null | string;
+      revitKind?: 'Forge' | 'Instance' | 'Type';
+      searchableIndex: string[];
+      skipInitialization?: boolean;
+      spatialRelationships?: LayerForgeInstanceElement['spatialRelationships'];
+      starred: boolean;
+      status: 'active' | 'archived';
+      templateName?: string;
+      type?: string;
+      typeId?: string;
+      updatedAt: T;
+      updatedBy: R;
+      updatedByRef: { email: string; id: string; name: string };
+      versionHistory?: LayerForgeInstanceElement['versionHistory'];
+      viewables?: LayerForgeViewable[];
+    }
+    ```
+    </Fragment>
+
+  </div>
+  <div>
+    <Fragment as="div">
+    ```ts
+    export interface LokiDBElement {
+      _sortName: string;
+      /**
+      * Dynamic fields stored as key-value pairs
+      *
+      * Keys (IDs) represent one the following:
+      * - A regular layer field ID (unique)
+      * - A Revit parameter ID
+      * - A spatial relationship ID + a categoryID (ex. 'spatialRelationships.<categoryId>')
+      */
+      [id: string]: unknown;
+      autoIncrementId: null | number;
+      categoryId: string;
+      completed: boolean;
+      createdAt: number;
+      createdBy: string;
+      createdPhaseId?: string;
+      id: string;
+      modelRevitId?: string;
+      name: string;
+      references: string[];
+      spatialRelationships: string[];
+      starred: boolean;
+      status: string;
+      type?: string;
+      updatedAt: number;
+      updatedBy: string;
+    }
+    ```
+    </Fragment>
+  </div>
+</div>
 </Slide>
 
-<Slide class="section-header">
-## Key Takeaways
+<Slide>
+## Update Contention
+
+**Problem**: Backend calls to update data can fail if made in bulk due to contention
+
+<ul class="p-12">
+	<Fragment as="li">
+		Client doesn't run into this issue - can retry at will/long lived sessions
+	</Fragment>
+	<Fragment as="li">Local changes can't have contention</Fragment>
+</ul>
+ 
+
+<Fragment as="h3">Solution: Queue + Retry</Fragment>
+<ul class="p-12">
+	<Fragment as="li">Solution: **(TODO)** Cloud queue for retrying failed updates</Fragment>
+  <Fragment as="li">Failed updates are retried with backoff until they succeed</Fragment>
+  <Fragment as="li">Optionally bulk-pull similar entries from queue</Fragment>
+</ul>
 </Slide>
 
 <Slide>
 ## Summary
 
-1. <Fragment>Local-first = all data available, always</Fragment>
-2. <Fragment>Sync engines handle eventual consistency</Fragment>
-3. <Fragment>Pre-serialized bundles speed up bootstrap</Fragment>
-4. <Fragment>In-memory indexing (LokiDB) for fast queries</Fragment>
+<ol class="p-12">
+  <Fragment as="li">Local-first = all data available, always</Fragment>
+  <Fragment as="li">No silver bullet - overhead costs and infrastructure maintenance add complexity</Fragment>
+  <Fragment as="li">Sync engines handle eventual consistency</Fragment>
+  <Fragment as="li">Pre-serialized bundles speed up bootstrap</Fragment>
+  <Fragment as="li">In-memory indexing (LokiDB) for fast queries</Fragment>
+  <Fragment as="li">Queue + retry for update contention</Fragment>
+</ol>
 </Slide>
 
 <Slide class="section-header">
 ## Questions?
 
-<p style="margin-top: 1em; opacity: 0.7;">layer.team</p>
+<p class="mt-8! opacity-70!">Slides & Writeup @ jackarens.com</p>
+
 </Slide>

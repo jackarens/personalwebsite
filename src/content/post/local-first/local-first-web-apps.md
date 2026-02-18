@@ -14,29 +14,29 @@ Our journey to implementing a local first web application at [Layer](https://lay
 
 ## Introduction
 
-I learned the hard way that "just load it when the user asks" is a trap. People expect the data to be there already. Consider the two categories: `issues` and `users` (think separate tabs in an Excel document). Every issue has an one or more assignees, alongside data like a description, cost to resolve, or photos. Every user carries data like home base, specialty, and contact info. When viewing issues in a table, users reasonably expect to see the assignee's basics inline. On the users page, they expect a sense of which kinds of issues that person usually owns, and maybe some high level aggregations, like average cost to resolve or when any issue was last updated. For a small project or domain, this is trivial. At scale, with tens of thousands of issues and hundreds of users, it becomes punishing.
+I learned the hard way that "just load it when the user asks" is a trap. People expect the data to be there already. Consider the two categories: `issues` and `users` (think separate tabs in an Excel document). Every issue has one or more assignees, alongside data like a description, cost to resolve, or photos. Every user carries data like home base, specialty, and contact info. When viewing issues in a table, users reasonably expect to see the assignee's basics inline. On the users page, they expect a sense of which kinds of issues that person usually owns, and maybe some high level aggregations, like average cost to resolve or when any issue was last updated. For a small project or domain, this is trivial. At scale, with tens of thousands of issues and hundreds of users, it becomes punishing.
 
 For example, to render the following table of issues where each row represents an individual issue and each column represents pieces of data about that issue, we have to have the full representation of each issue. Because the assigned user is present on the issue data, we can display it without any problems.
 
 ![Issues table example](./issues-table.png)
-*Issues table example*
+_Issues table example_
 
 However, if we want to show any additional information about the users that have been assigned to that issue, we need to have the full set of data for each associated user.
 
-For a long time, our solution at Layer was to limit the data shown in high level views (like tables), loading richer related data only when users clicked through to a specific entry (row). This kept bandwidth in check, but at the cost users not having all the data they expected, when they expected it. It also meant that we were loading similar or overlapping sets of data repeatedly. As users navigated our app, they might load the same user data multiple times, once per issue they clicked into. This led to a lot of redundant network requests and slower perceived performance.
+For a long time, our solution at Layer was to limit the data shown in high level views (like tables), loading richer related data only when users clicked through to a specific entry (row). This kept bandwidth in check, but at the cost of users not having all the data they expected, when they expected it. It also meant that we were loading similar or overlapping sets of data repeatedly. As users navigated our app, they might load the same user data multiple times, once per issue they clicked into. This led to a lot of redundant network requests and slower perceived performance.
 
-The trouble showed up when relationships became more complex. To support high level (table) views, we propagated easy fields (names, IDs), but this wasn't feasible for all the data user's could possibly want. This also introduced issues with drift: the presence of stale data becuase a propagation operation had failed. At project scale, neither direction was cheap (or reasonable).
+The trouble showed up when relationships became more complex. To support high level (table) views, we propagated easy fields (names, IDs), but this wasn't feasible for all the data users could possibly want. This also introduced issues with drift: the presence of stale data because a propagation operation had failed. At project scale, neither direction was cheap (or reasonable).
 
-In addition to these concerns about data availability within complex setups, our users wanted some sort of reliable offline experience. In many of these use cases, limitations with loading data from our servers were reasonable(ish), but users couldn't understand why the data they were entering into the app locally could perform as expected. Our Firestore integration provided some offline capabilities, but it was clear that we needed a more robust solution to meet our users' needs.
+In addition to these concerns about data availability within complex setups, our users wanted some sort of reliable offline experience. In many of these use cases, limitations with loading data from our servers were reasonable(ish), but users couldn't understand why the data they were entering into the app locally couldn't perform as expected. Our Firestore integration provided some offline capabilities, but it was clear that we needed a more robust solution to meet our users' needs.
 
 ## Solutions Considered
 
-| Approach | Offline Support | Complexity | Data Freshness | Performance at Scale |
-| -------- | :-------------: | :--------: | :------------: | :------------------: |
-| Direct DB Calls | ❌ | Low | Always fresh | Excellent |
-| Propagation | ❌ | High | Prone to drift | Poor |
-| On-Demand Loading | ❌ | Medium | Always fresh | Variable |
-| Local-first | ✅ | High | Eventually consistent | Excellent |
+| Approach          | Offline Support | Complexity |    Data Freshness     | Performance at Scale |
+| ----------------- | :-------------: | :--------: | :-------------------: | :------------------: |
+| Direct DB Calls   |       ❌        |    Low     |     Always fresh      |         Poor         |
+| Propagation       |       ❌        |   Medium   |    Prone to drift     |         Poor         |
+| On-Demand Loading |       ❌        |    High    |     Always fresh      |       Variable       |
+| Local-first       |       ✅        |   Medium   | Eventually consistent |      Excellent       |
 
 ### **Propagation**
 
@@ -47,16 +47,20 @@ As mentioned, propagation was our first approach, and it worked (ish) until user
 We considered an "on-demand" loading approach in which we build out an endpoint that would load all the data for the given page in one request. For example, when a user navigates to the issues table, we would make a single request that returns all the issues along with the relevant user data for each issue.
 
 ![XKCD 378 - Real Programmers](./xkcd-378.png)
-*XKCD 378 - Real Programmers*
+_XKCD 378 - Real Programmers_
 
 This is generally where the "Firestore/NoSQL/backend-less apps aren't for production applications" crowd gets really excited. "If you would've just invested in a REAL database and .NET backend with a traditional ORM like a real company, you wouldn't have this problem!" Unfortunately (for them), this approach still has limitations, especially as the amount of data grows, resulting in complex and likely bug-prone reducers. Most importantly for us, it doesn't allow for offline functionality at all and would still result in much of a user's data being loaded multiple times as they navigate the app. Oldest isn't always best - I'll leave it at that.
 
 :::warning
 On-demand loading creates complex reducers that are prone to bugs and offers zero offline capability. For data-heavy applications, this approach doesn't scale.
 :::
+
 ### **Local-first**
 
-Occam's Razor: What if all the data was just always loaded? No more on demand network requests at all! We generally knew that the majority of our users were working with somewhere around 1,000 to 10,000 entries (issues, users, etc) in a given project, which meant that loading all the data into the client upfront was feasible and wouldn't require any more time or network bandwidth than loading our application itse-lf. For larger projects, a slower initial load time is a reasonable tradeoff for the improved performance and offline capabilities that come with having all the data available locally.
+![Local Data](./local-files.jpg)
+_I just want my data on my computer, not the cloud_
+
+Occam's Razor: What if all the data was just always loaded? No more on demand network requests at all! We generally knew that the majority of our users were working with somewhere around 1,000 to 10,000 entries (issues, users, etc) in a given project, which meant that loading all the data into the client upfront was feasible and wouldn't require any more time or network bandwidth than loading our application itself. For larger projects, a slower initial load time is a reasonable tradeoff for the improved performance and offline capabilities that come with having all the data available locally.
 
 :::tip
 For most projects with 1,000-10,000 entries, the entire dataset can be loaded upfront with negligible impact on initial load time.
@@ -78,8 +82,8 @@ We explored a handful of providers during our research into local-first architec
 
 **Key features of Replicache include:**
 
-- Flexible implementation: Replicache provices a client library that handles the local data storage read/write and synchronization calls, but the push/pull endpoints are defined by the implementers, giving us the flexibility to tailor the behavior to our specific needs. The server library is limited to types and interfaces that ensure compatibilty with the client, but otherwise doesn't impose any constraints on how we implement the server-side logic.
-- IndexedDB storage: Replicache uses IndexedDB for local storage, which is a widely supported and performant option for storing large amounts of data in the browser. This was important for us given the amount of data we needed to store locally and our need for cross-platform support (web and Capacitor iOS). We also wanted battle tested[^1]. Origin Private File System API implementations were a bit too new for our tastes, and we wanted to avoid the risk of running into issues with browser support or performance.
+- Flexible implementation: Replicache provides a client library that handles the local data storage read/write and synchronization calls, but the push/pull endpoints are defined by the implementers, giving us the flexibility to tailor the behavior to our specific needs. The server library is limited to types and interfaces that ensure compatibility with the client, but otherwise doesn't impose any constraints on how we implement the server-side logic.
+- IndexedDB storage: Replicache uses IndexedDB for local storage, which is a widely supported and performant option for storing large amounts of data in the browser. This was important for us given the amount of data we needed to store locally and our need for cross-platform support (web and Capacitor iOS). We also wanted battle-tested storage[^1]. Origin Private File System API implementations were a bit too new for our tastes, and we wanted to avoid the risk of running into issues with browser support or performance.
 - Observability: Replicache provides "hooks" that allow us to easily observe changes to the local data and update our UI accordingly. This was important for ensuring a responsive and seamless user experience as data is synchronized in the background.
 - Designed for NoSQL: Replicache is designed to work with NoSQL data models, which was a good fit for our existing Firestore data structure. This allowed us to avoid the need for complex transformations or migrations of our data to fit a different model. Replicache's successor, Zero, is designed for more traditional relational data models (SQL), though less offline capable.
 
@@ -94,7 +98,7 @@ The technical implementation of our local-first architecture involved several ke
 Replicache requires that you pick from one of their versioning strategies to ensure that all changes are properly versioned and that conflicts can be resolved. We chose to implement per-space versioning, which means that each project (or "space") in our application has its own version number that is incremented with each change. This allows us to track changes at the project level and ensures that we can properly synchronize changes across clients without conflicts.
 
 ![Database Structure](./database-structure.png)
-*Database Structure*
+_Database Structure_
 
 :::important
 For Layer, this means storing a version number on the project and each element document in Firestore. The overall project version (`rcVersion`) is incremented with each change to the project or any of its elements, while each element document has its own version number (`rcVersion`) that is incremented with each change to that specific element.
@@ -107,14 +111,14 @@ Bulk updates to the project (e.g. a change that affects multiple elements) are h
 #### High-level Architecture
 
 ![High-level architecture diagram](./architecture-diagram.png)
-*High-level Architecture*
+_High-level Architecture_
 
 1. **Client**: Web/iOS app. All interactions go through the Replicache client service, which provides a simple API for reading/writing data and handles synchronization with the server in the background.
-    - Firestore allows for easy watching of data changes, so listening to the primary database for changes and triggering background syncs is straightforward.
+   - Firestore allows for easy watching of data changes, so listening to the primary database for changes and triggering background syncs is straightforward.
 2. **Primary Database**: Firestore. Standard NoSQL database that serves as the source of truth for all data.
-:::caution
-**Nothing** gets written to Firestore without going through the transaction and versioning system. This is critical for maintaining data integrity across all clients.
-:::
+   :::caution
+   **Nothing** gets written to Firestore without going through the transaction and versioning system. This is critical for maintaining data integrity across all clients.
+   :::
 3. **Push Endpoint**: Receives updates from the client and applies them to the primary database. This is where we handle conflict resolution and ensure that all changes are properly versioned. Also performs authentication checks. Along with `pull`, this is called by the client in the background.
 4. **Pull Endpoint**: Provides the client with the latest data from the primary database. This is where we handle any necessary transformations or filtering of the data before it is sent to the client. Fresh clients need a full dump of the data, while clients that have been offline for a while or are currently online can receive a more incremental update. Along with `push`, this is called by the client in the background.
 5. **External Sources**: Other data manipulation sources (Cloud Functions, API endpoints, etc) that can also write to the primary database. These changes will be picked up by the pull endpoint and synchronized to the clients in the background.
@@ -133,13 +137,13 @@ Two things stood out as we began to diagnose this issue and look for solutions. 
 The power behind a sync engine is the ability to operate asynchronously. You can send somewhat stale data initially and rely on the final pull to catch up.
 :::
 
-This led us to a solution: we could pre-serialize the data for each project and store it in a cache. Then when a client requests data for a project, we can send the pre-serialized data to the client right away. We can then rely on the final call to `pull` to ensure that the client get's up to date. This was inspired in part by Firestore's [bundle builder](https://firebase.google.com/docs/extensions/official/firestore-bundle-builder) extension, which helps reduce database querying costs for apps with millions of users that are constantly loading the same sets of data.
+This led us to a solution: we could pre-serialize the data for each project and store it in a cache. Then when a client requests data for a project, we can send the pre-serialized data to the client right away. We can then rely on the final call to `pull` to ensure that the client gets up to date. This was inspired in part by Firestore's [bundle builder](https://firebase.google.com/docs/extensions/official/firestore-bundle-builder) extension, which helps reduce database querying costs for apps with millions of users that are constantly loading the same sets of data.
 
 By building a "bundle" for each project that contained the pre-serialized data for a given version and storing it in a storage bucket, we could have the client fetch the zipped bundle file directly from the storage bucket for the initial load. Sure, it was likely to end up out of date fairly quickly, but it was helpful in ensuring that a quick bootstrap could be completed with 70% - 90% of the data that was needed, with a quick background sync to grab the very latest changes.
 
 ### **Searching/Sorting/Filtering Read-in Time**
 
-In order to support custom relationships between Layer categories (e.g. issues, users, etc) - think tabs in Excel - we had built out a very thorough and rather complex set of filtering capabilities in JS that could be used on the front-end and backend to filter groups of elements.[^2] This filter strucutre was extensible, already had migrations from our old filtering structure, and was built to provide feature parity (and more!) compared to our existing filtering capabilities with ElasticSearch. However, it was built with the assumption that the data would be loaded and available synchronouslly, which meant that we were running into performance issues when trying to load all that data we had so nicely cached and stored in the user's IndexedDB into memory. Filtering and searching ended up being easier to solve, after all, you can always filter on smaller subsets of data and return those to the user once you have "enough", but sorting was a bit more of a challenge. To filter **and** sort, you need to have all the data loaded and available in memory.
+In order to support custom relationships between Layer categories (e.g. issues, users, etc) - think tabs in Excel - we had built out a very thorough and rather complex set of filtering capabilities in JS that could be used on the front-end and backend to filter groups of elements.[^2] This filter structure was extensible, already had migrations from our old filtering structure, and was built to provide feature parity (and more!) compared to our existing filtering capabilities with ElasticSearch. However, it was built with the assumption that the data would be loaded and available synchronously, which meant that we were running into performance issues when trying to load all that data we had so nicely cached and stored in the user's IndexedDB into memory. Filtering and searching ended up being easier to solve, after all, you can always filter on smaller subsets of data and return those to the user once you have "enough", but sorting was a bit more of a challenge. To filter **and** sort, you need to have all the data loaded and available in memory.
 
 [^2]: I hope to complete an article similar to this one on our filter engine. Stay tuned!
 

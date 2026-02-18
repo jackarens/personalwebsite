@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <defs>
+    <linearGradient id="psGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6" />
+      <stop offset="100%" style="stop-color:#8B5CF6" />
+    </linearGradient>
+  </defs>
+  <rect fill="url(#psGrad)" width="48" height="48" rx="8" />
+  <path d="M14 24 C14 18 19 14 24 14 C29 14 34 18 34 24" stroke="white" stroke-width="3" fill="none"
+    stroke-linecap="round" />
+  <path d="M14 28 C14 34 19 38 24 38 C29 38 34 34 34 28" stroke="white" stroke-width="3" fill="none"
+    stroke-linecap="round" opacity="0.6" />
+  <circle cx="24" cy="24" r="4" fill="white" />
+</svg>
