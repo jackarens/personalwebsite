@@ -39,6 +39,8 @@ body {
 
 /* Overview mode - ensure all slides are visible */
 .reveal.overview .slides section {
+	display: flex !important;
+	flex-direction: column;
 	opacity: 1 !important;
 	visibility: visible !important;
 }
@@ -187,6 +189,7 @@ body {
 .reveal img {
 	max-width: 100%;
 	max-height: 100%;
+	min-height: 0;
 	border: none;
 	box-shadow: none;
 }
@@ -287,7 +290,8 @@ body {
 	gap: 2em;
 	align-items: center;
 	margin-top: 1em;
-	height: calc(100% - 3em);
+	height: auto;
+	min-height: 0;
 }
 
 .reveal .two-column div {

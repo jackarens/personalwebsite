@@ -78,6 +78,15 @@ Additional capabilities would also come out of our local-first architecture beyo
 
 We explored a handful of providers during our research into local-first architectures, including Firestore's offline capabilities, Replicache, and RxDB. Our primary concerns were speed, reliability, and ease of integration. We ultimately chose Replicache for its maturity and control over the implementation. It was later open-sourced, which gave us confidence in its long-term viability. As mentioned, we had already been using Firestore for our primary data storage, but its offline capabilities were insufficient for our needs, particularly in terms of control over storage duration and scope; in terms of control over storage duration and scope, it had none. RxDB had some promising features and excellent marketing, but much of it was locked behind a rather sketchy paywall and seemed overall less mature.
 
+| Approach                    | Offline | Control | NoSQL Support | Maturity |
+| --------------------------- | :-----: | :-----: | :-----------: | :------: |
+| Build from scratch          |   ✅    |  Full   |      ✅       |   N/A    |
+| Firebase Offline            |   ⚠️    | Limited |      ✅       |   High   |
+| **Replicache**              |   ✅    |  High   |      ✅       |   High   |
+| Zero (Replicache successor) |   ⚠️    |  High   |      ❌       |  Medium  |
+
+Zero, Replicache's successor, targets SQL databases and has reduced offline capabilities compared to Replicache, plus it was released after we had already started our implementation, but it's worth watching as it may be a good fit for other applications that don't require the same level of offline functionality or that are already using a relational database.
+
 ::github{repo="rocicorp/replicache"}
 
 **Key features of Replicache include:**
@@ -123,6 +132,50 @@ _High-level Architecture_
 4. **Pull Endpoint**: Provides the client with the latest data from the primary database. This is where we handle any necessary transformations or filtering of the data before it is sent to the client. Fresh clients need a full dump of the data, while clients that have been offline for a while or are currently online can receive a more incremental update. Along with `push`, this is called by the client in the background.
 5. **External Sources**: Other data manipulation sources (Cloud Functions, API endpoints, etc) that can also write to the primary database. These changes will be picked up by the pull endpoint and synchronized to the clients in the background.
 
+#### Push & Pull Endpoint Implementation
+
+The push and pull endpoints are the heart of the sync system. Here's a simplified view of how they work:
+
+```ts
+// Pull Endpoint - Server sends changes to client
+function pull(cookie) {
+	// Get all changes since client's last sync point
+	const changes = getChangesSince(cookie);
+
+	// Build patches from the changes
+	const patches = buildPatches(changes);
+
+	// Return patches and new sync point
+	const newCookie = getCurrentVersionCookie();
+	return { patches, cookie: newCookie };
+}
+```
+
+```ts
+// Push Endpoint - Client sends changes to server
+function push(clientId, mutations) {
+	for (const mutation of mutations) {
+		// Skip if already processed (idempotency)
+		if (alreadyProcessed(clientId, mutation.id)) {
+			continue;
+		}
+
+		// Check permissions
+		if (!hasPermission(clientId, mutation)) {
+			continue;
+		}
+
+		// Apply mutation to server state
+		applyMutation(mutation);
+		recordMutationProcessed(clientId, mutation.id);
+	}
+
+	return { success: true };
+}
+```
+
+The key insight here is that the push endpoint must be **idempotent**—if a client retries a mutation that was already processed, the server should recognize it and skip it. This is critical for handling network failures gracefully.
+
 ## Challenges
 
 It didn't take long to run into a few challenges with our implementation. In general, things worked as expected, but once projects got larger, we started to see some performance issues with the initial load time as well as some edge cases with our synchronization logic. The following are a few of our bigger challenges and how we addressed them.
@@ -141,6 +194,54 @@ This led us to a solution: we could pre-serialize the data for each project and 
 
 By building a "bundle" for each project that contained the pre-serialized data for a given version and storing it in a storage bucket, we could have the client fetch the zipped bundle file directly from the storage bucket for the initial load. Sure, it was likely to end up out of date fairly quickly, but it was helpful in ensuring that a quick bootstrap could be completed with 70% - 90% of the data that was needed, with a quick background sync to grab the very latest changes.
 
+#### Bundle Loading Implementation
+
+Here's how the bundle loading works on both client and server:
+
+```ts
+// Client Side - Pull with bundle support
+function pull() {
+	const lastCookie = getStoredCookie();
+	const response = await fetch("/api/pull", {
+		method: "POST",
+		body: JSON.stringify({ cookie: lastCookie }),
+	});
+
+	if (response.hasBundleUrl) {
+		// Bundle exists in storage - load full snapshot
+		const bundleData = await downloadFromStorage(response.bundleUrl);
+		applyPatches(bundleData.patches);
+		storeCookie(bundleData.cookie);
+
+		// Pull again for changes since bundle was created
+		return pull();
+	} else {
+		// No bundle - apply incremental patches
+		applyPatches(response.patches);
+		storeCookie(response.cookie);
+	}
+}
+```
+
+```ts
+// Server Side - Decide whether to serve bundle or patches
+function handlePull(cookie) {
+	const changesSinceCookie = getChangesSince(cookie);
+
+	if (cookie.fromVersion === 0) {
+		// Fresh client - serve a pre-built bundle instead
+		const bundleUrl = getLatestBundleUrl();
+		return { bundleUrl, cookie: bundleCookie };
+	} else {
+		// Existing client - return incremental patches
+		const patches = buildPatches(changesSinceCookie);
+		return { patches, cookie: currentCookie };
+	}
+}
+```
+
+This approach is particularly helpful for projects that start out huge—new team members joining a large project can bootstrap quickly without waiting for thousands of individual pull operations.
+
 ### **Searching/Sorting/Filtering Read-in Time**
 
 In order to support custom relationships between Layer categories (e.g. issues, users, etc) - think tabs in Excel - we had built out a very thorough and rather complex set of filtering capabilities in JS that could be used on the front-end and backend to filter groups of elements.[^2] This filter structure was extensible, already had migrations from our old filtering structure, and was built to provide feature parity (and more!) compared to our existing filtering capabilities with ElasticSearch. However, it was built with the assumption that the data would be loaded and available synchronously, which meant that we were running into performance issues when trying to load all that data we had so nicely cached and stored in the user's IndexedDB into memory. Filtering and searching ended up being easier to solve, after all, you can always filter on smaller subsets of data and return those to the user once you have "enough", but sorting was a bit more of a challenge. To filter **and** sort, you need to have all the data loaded and available in memory.
@@ -151,10 +252,127 @@ After a bit of research, we came across LokiDB, an in-memory JavaScript database
 
 ::github{repo="LokiJS-Forge/LokiDB"}
 
+To illustrate the difference between our full data model and what we actually index, here's a comparison:
+
+```ts
+// Full LayerElement - everything stored in Replicache/Firestore
+export interface LayerElement {
+	autoGenerateName?: LayerAutoGenerateNameOptions;
+	autoIncrementId?: number;
+	category: ContextItem<R>;
+	completed: boolean;
+	createdAt: number | T;
+	createdBy: R | string;
+	createdByRef: { email: string; id: string; name: string };
+	createdPhaseId?: string;
+	deletedAt?: number | T;
+	family: string;
+	fields: Record<string, any | LayerElementField<T, R>>;
+	id?: string;
+	modelRevitId: string;
+	name: string;
+	params: Record<string, LayerRevitParameterValue<T, R>>;
+	rcVersion?: number;
+	references?: { [key: string]: LayerReference<T, R> };
+	revitExternalId?: string;
+	revitId: null | string;
+	revitKind?: "Forge" | "Instance" | "Type";
+	searchableIndex: string[];
+	skipInitialization?: boolean;
+	spatialRelationships?: LayerForgeInstanceElement["spatialRelationships"];
+	starred: boolean;
+	status: "active" | "archived";
+	templateName?: string;
+	type?: string;
+	typeId?: string;
+	updatedAt: T;
+	updatedBy: R;
+	updatedByRef: { email: string; id: string; name: string };
+	versionHistory?: LayerForgeInstanceElement["versionHistory"];
+	viewables?: LayerForgeViewable[];
+}
+```
+
+```ts
+// LokiDBElement - pared down for filtering/sorting only
+export interface LokiDBElement {
+	_sortName: string;
+	/**
+	 * Dynamic fields stored as key-value pairs
+	 * Keys represent field IDs, Revit parameter IDs, or spatial relationship IDs
+	 */
+	[id: string]: unknown;
+	autoIncrementId: null | number;
+	categoryId: string;
+	completed: boolean;
+	createdAt: number;
+	createdBy: string;
+	createdPhaseId?: string;
+	id: string;
+	modelRevitId?: string;
+	name: string;
+	references: string[];
+	spatialRelationships: string[];
+	starred: boolean;
+	status: string;
+	type?: string;
+	updatedAt: number;
+	updatedBy: string;
+}
+```
+
+The `LokiDBElement` is roughly 60-70% smaller than the full `LayerElement`, which makes a significant difference when loading tens of thousands of elements into memory.
+
+![LokiDB query example](./loki-query.png)
+_LokiDB query performance compared to naive filtering_
+
 We didn't need to use LokiDB for all of our data, just the data that was relevant for filtering and sorting. The data in Replicache (IndexDB) was everything, guaranteed to be up to date with the current sync and complete - no missing attributes. That data was pared down as much as possible to just the attributes we needed for filtering and sorting, and then loaded into LokiDB for quick querying. "Watching" Replicache for changes to entries within certain categories (e.g. issues, users) allowed us to know when to re-query for a given filter configuration, providing a "live-updating" feel to our data.
 
 ### **Simultaneous Bulk Server Updates**
 
-:::note[Coming Soon]
-This section will detail our approach to handling simultaneous bulk updates from multiple clients and external sources.
+One challenge that emerged as we scaled was **update contention**—when backend processes (Cloud Functions, API endpoints, batch jobs) attempt to update the same project simultaneously. On the client side, this isn't an issue: local changes don't have contention, as the sync engine handles retries gracefully with long-lived sessions. But server-side bulk operations are different.
+
+:::warning
+Firestore transactions have a maximum duration and will fail if contention is too high. A batch job updating elements while another process updates the same project's elements will cause failures, and Firestore transactions have a limited retry ability before they give up.
 :::
+
+**The Problem:**
+
+- Backend bulk updates can fail due to Firestore transaction contention
+- Unlike clients, server processes don't have long-lived sessions to retry
+- Failed updates could leave data in an inconsistent state
+
+#### Our Solution: Queue + Retry
+
+We implemented a cloud queue system for handling bulk server updates:
+
+```ts
+// Instead of direct bulk updates, enqueue the operation
+async function bulkUpdateElements(projectId: string, updates: ElementUpdate[]) {
+	// Add to cloud queue instead of direct write
+	await queue.enqueue({
+		projectId,
+		updates,
+		retryCount: 0,
+		maxRetries: 5,
+	});
+}
+
+// Queue processor with exponential backoff
+async function processQueueItem(item: QueueItem) {
+	try {
+		await applyUpdatesInTransaction(item.projectId, item.updates);
+	} catch (error) {
+		if (isContentionError(error) && item.retryCount < item.maxRetries) {
+			// Re-enqueue with exponential backoff
+			const delay = Math.pow(2, item.retryCount) * 1000;
+			await queue.enqueue({ ...item, retryCount: item.retryCount + 1 }, delay);
+		} else {
+			// Log failure for manual intervention
+			await logFailedUpdate(item, error);
+		}
+	}
+}
+```
+
+The queue processor can also optionally pull similar entries from the queue and batch them together, reducing the total number of transactions needed. This approach ensures that even under high contention, all updates eventually succeed without manual intervention.

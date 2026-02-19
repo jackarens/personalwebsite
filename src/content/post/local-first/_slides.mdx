@@ -17,6 +17,8 @@ import databaseStructure from "./database-structure.png";
 import xkcd378 from "./xkcd-378.png";
 import exponentialGrowth from "./exponential-growth.png";
 import localFiles from "./local-files.jpg";
+import oldLookupExample from "./old-lookup-example.png";
+import lokiQuery from "./loki-query.png";
 import how01 from "./how-01.svg";
 import how02 from "./how-02.svg";
 import how03 from "./how-03.svg";
@@ -56,12 +58,20 @@ export const codeSampleNotes = {
 ## Agenda
 
 <ol class="p-12">
-  <Fragment as="li">The Problem</Fragment>
-  <Fragment as="li">Solutions Considered</Fragment>
-  <Fragment as="li">Why Local-first Won</Fragment>
-  <Fragment as="li">Technical Implementation</Fragment>
-  <Fragment as="li">Challenges & Solutions</Fragment>
+	<Fragment as="li">The Problem</Fragment>
+	<Fragment as="li">Solutions Considered</Fragment>
+	<Fragment as="li">Why Local-first Won</Fragment>
+	<Fragment as="li">Technical Implementation</Fragment>
+	<Fragment as="li">Challenges & Solutions</Fragment>
 </ol>
+
+<Fragment as="div">
+	<Callout type="tip" title="Goal of this talk">
+		You learn something about decentralized systems, planning large initiatives,
+		and solving problems
+	</Callout>
+</Fragment>
+
 </Slide>
 
 <Slide centerHeader={true}>
@@ -88,6 +98,9 @@ export const codeSampleNotes = {
 ## Example
 
 <div class="r-stack">
+<Fragment as="div" class="w-full h-full">
+  <Image src={oldLookupExample} alt="Example with old lookup functionality" layout="full-width" fit="contain" />
+</Fragment>
 <Fragment as="div" class="w-full h-full">
  <iframe class="layer-embedded-shared-view" src="https://public-staging.layer.team/view/ydb1bM0Y1tksene9EiXq?hideBorder=true" title="All Issues" width="100%" height="100%"> </iframe> 
 </Fragment>
@@ -153,13 +166,18 @@ export const codeSampleNotes = {
 			<Callout type="warning" title="Zero offline support"></Callout>
 		</Fragment>
 	</ul>
-	<Image
-		src={xkcd378}
-		alt="XKCD 378 - Real Programmers"
-		layout="full-width"
-		fit="contain"
-		class="fragment"
-	/>
+	<Fragment as="div" class="flex h-full w-full flex-col">
+		<Image
+			src={xkcd378}
+			alt="XKCD 378 - Real Programmers"
+			layout="full-width"
+			fit="contain"
+			class="min-h-0"
+		/>
+		<div class="mt-4 text-center">
+			_XKCD 378: Real Programmers_ by Randall Munroe 2.5
+		</div>
+	</Fragment>
 </div>
 
 </Slide>
@@ -179,6 +197,11 @@ export const codeSampleNotes = {
         Provides stability, offline support, and guaranteed eventual consistency
       </Callout>
     </Fragment>
+    <Fragment as="div">
+      <Callout type="caution" title="Puts more responsibility on client and infrastructure">
+        Requires more storage space and local processing power
+      </Callout>
+    </Fragment>
   </ul> 
   <Image
     src={localFiles}
@@ -195,12 +218,14 @@ export const codeSampleNotes = {
 <div class="two-column !items-start">
   <div class="pt-12">
   <Fragment as="h3">Our Advantages/Situation</Fragment>
-    <ol class="p-12">
+    <ol class="p-12 pb-0">
       <Fragment as="li">**Project-scoped data**: natural batching</Fragment>
       <ul>
         <Fragment as="li">~1,000–10,000 entries per project</Fragment>
         <Fragment as="li">Feasible to load upfront</Fragment>
       </ul>
+    </ol>
+    <ol class="p-12 pt-0">
       <Fragment as="li">**Users expect heavy apps** (Revit, etc.)</Fragment>
       <Fragment as="li">**Offline is a must** for job sites</Fragment>
     </ol>
@@ -227,7 +252,7 @@ export const codeSampleNotes = {
 
 Local-first needs a **sync engine** to handle data flow
 
-<div class="m-auto mt-32 flex w-2/3 max-w-6xl flex-col gap-4">
+<div class="m-auto grid w-2/3 max-w-6xl grid-cols-2 gap-4 text-center">
 	<div class="fragment flex flex-col items-center justify-center gap-2 rounded-lg border border-gray-500 bg-gray-500/10 p-4">
 		<div class="mb-2 text-4xl">🔧</div>
 		<div class="font-semibold">Build from scratch</div>
@@ -243,7 +268,15 @@ Local-first needs a **sync engine** to handle data flow
 		<div class="font-semibold text-pink-400">Replicache</div>
 		<div class="text-sm opacity-70">Flexible, client-defined sync</div>
 	</div>
-	<div class="fragment flex flex-col items-center justify-center gap-2 rounded-lg border border-green-500 bg-green-500/10 p-4">
+	<div class="fragment flex flex-col items-center justify-center gap-2 rounded-lg border border-gray-500 bg-gray-400/20 p-4">
+		<img src="/logos/zero.svg" alt="Zero" class="mb-2 h-12" />
+		<div class="font-semibold">Zero</div>
+		<div class="text-sm opacity-70">
+			Released after we started implementation - not designed for NoSQL
+			(Replicache Successor)
+		</div>
+	</div>
+	<div class="fragment col-span-2 flex flex-col items-center justify-center gap-2 rounded-lg border border-green-500 bg-green-500/10 p-4">
 		<div class="mb-2 flex h-12 items-center gap-2">
 			<img src="/logos/electricsql.jpg" alt="ElectricSQL" class="h-8" />
 			<img src="/logos/powersync.svg" alt="PowerSync" class="h-8" />
@@ -251,13 +284,6 @@ Local-first needs a **sync engine** to handle data flow
 		<div class="font-semibold text-green-400">Others</div>
 		<div class="text-sm opacity-70">
 			Emerging options (ElectricSQL, PowerSync)
-		</div>
-	</div>
-	<div class="fragment flex flex-col items-center justify-center gap-2 rounded-lg border border-gray-500 bg-gray-500/10 p-4">
-		<img src="/logos/zero.svg" alt="Zero" class="mb-2 h-12" />
-		<div class="font-semibold">Zero (Replicache Successor)</div>
-		<div class="text-sm opacity-70">
-			Released after we started implementation - not designed for NoSQL
 		</div>
 	</div>
 </div>
@@ -439,9 +465,18 @@ Local-first needs a **sync engine** to handle data flow
 	</Fragment>
 </ul>
 
-<Fragment as="h3"> Solution: Pre-serialized Bundles</Fragment>
+</Slide>
+
+<Slide>
+
+### Solution: Pre-serialized Bundles
 
 <ul class="p-12">
+	<Fragment>
+		<Callout type="note" title="Key Insight">
+			Inspired by Firestore's bundling mechanism for reducing database reads
+		</Callout>
+	</Fragment>
 	<Fragment as="li">Pre-serialize project data to storage bucket</Fragment>
 	<Fragment as="li">Client fetches zipped bundle directly</Fragment>
 	<Fragment as="li">70–90% of data instantly</Fragment>
@@ -457,27 +492,6 @@ Local-first needs a **sync engine** to handle data flow
   <div>
 
     ### Client Side
-
-    <Fragment as="div">
-    ```ts
-    function handlePull(cookie):
-        changesSinceCookie = getChangesSince(cookie)
-
-        if cookie.fromVersion === 0:
-            // Fresh client - serve a pre-built bundle instead
-            bundleUrl = getLatestBundleUrl()
-            return { bundleUrl, cookie: bundleCookie }
-        else:
-            // Few changes - return incremental patches
-            patches = buildPatches(changesSinceCookie)
-            return { patches, cookie: currentCookie }
-    ```
-    </Fragment>
-
-  </div>
-  <div>
-
-    ### Server Side
 
     <Fragment as="div">
     ```ts
@@ -502,21 +516,50 @@ Local-first needs a **sync engine** to handle data flow
     </Fragment>
 
   </div>
+  <div>
+
+    ### Server Side
+
+    <Fragment as="div">
+    ```ts
+    function handlePull(cookie):
+        changesSinceCookie = getChangesSince(cookie)
+
+        if cookie.fromVersion === 0:
+            // Fresh client - serve a pre-built bundle instead
+            bundleUrl = getLatestBundleUrl()
+            return { bundleUrl, cookie: bundleCookie }
+        else:
+            // Few changes - return incremental patches
+            patches = buildPatches(changesSinceCookie)
+            return { patches, cookie: currentCookie }
+    ```
+    </Fragment>
+
+  </div>
 </div>
 
 </Slide>
 </VerticalStack>
 
+<VerticalStack>
 <Slide>
 ## Filtering & Sorting
 
-**Problem**: Loading all data into memory for sort is slow
+**Problem**: Loading huge amounts of data (10,000+ elements) into memory is slow
 
 <ul class="p-12">
+	<Fragment as="li">To sort data, you have to load it all into memory</Fragment>
+	<Fragment as="li">Servers/databases solve this with indexing</Fragment>
+	<Fragment as="li">Replicache has some support indexing, but not first class</Fragment>
+	<Fragment as="li">Filtering & sorting has similar gaps</Fragment>
 	<Fragment as="li">Solution: **LokiDB** for in-memory indexing</Fragment>
 	<Fragment as="li">Only index data needed for filter/sort</Fragment>
 	<Fragment as="li">Watch Replicache for live updates</Fragment>
 </ul>
+</Slide>
+
+<Slide>
 <div class="two-column mt-0!">
   <div>
     <Fragment as="div">
@@ -596,6 +639,11 @@ Local-first needs a **sync engine** to handle data flow
   </div>
 </div>
 </Slide>
+
+<Slide>
+<Image src={lokiQuery} alt="LokiDB query example" layout="full-width" fit="contain" />
+</Slide>
+</VerticalStack>
 
 <Slide>
 ## Update Contention
