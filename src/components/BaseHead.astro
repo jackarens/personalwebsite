@@ -82,7 +82,82 @@ const socialImageURL = new URL(ogImage ? ogImage : "/social-card.png", Astro.url
 			window.dataLayer = window.dataLayer || [];
 			function gtag(){dataLayer.push(arguments);}
 			gtag('js', new Date());
-			gtag('config', 'G-8Z6GJL61CV');
+			gtag('config', 'G-8Z6GJL61CV', { send_page_view: false });
+		</script>
+		<script is:inline>
+			function trackPageview() {
+				if (typeof gtag !== "function") return;
+				gtag("event", "page_view", {
+					page_location: window.location.href,
+					page_path: window.location.pathname + window.location.search + window.location.hash,
+					page_title: document.title,
+				});
+			}
+
+			window.addEventListener("load", trackPageview, { once: true });
+			document.addEventListener("astro:page-load", trackPageview);
+			document.addEventListener("astro:after-swap", trackPageview);
+
+			document.addEventListener("theme-change", (event) => {
+				if (typeof gtag !== "function") return;
+				const theme = event?.detail?.theme || "unknown";
+				gtag("event", "theme_change", { theme });
+			});
+
+			document.addEventListener("analytics:search-open", () => {
+				if (typeof gtag !== "function") return;
+				gtag("event", "search_open");
+			});
+
+			document.addEventListener("analytics:search-close", () => {
+				if (typeof gtag !== "function") return;
+				gtag("event", "search_close");
+			});
+
+			document.addEventListener("analytics:back-to-top", () => {
+				if (typeof gtag !== "function") return;
+				gtag("event", "back_to_top");
+			});
+
+			document.addEventListener("analytics:image-zoom", (event) => {
+				if (typeof gtag !== "function") return;
+				const detail = event?.detail || {};
+				gtag("event", "image_zoom", {
+					src: detail.src,
+					alt: detail.alt,
+				});
+			});
+
+			document.addEventListener("click", (event) => {
+				const target = event.target instanceof Element ? event.target : null;
+				const link = target?.closest("a[href]");
+				if (!link) return;
+
+				if (link.getAttribute("data-analytics") === "view-slides") {
+					if (typeof gtag === "function") {
+						gtag("event", "view_slides", {
+							link_url: link.href,
+						});
+					}
+				}
+
+				const href = link.getAttribute("href");
+				if (!href || href.startsWith("#")) return;
+
+				let url;
+				try {
+					url = new URL(href, window.location.href);
+				} catch {
+					return;
+				}
+
+				if (url.origin === window.location.origin) return;
+				if (typeof gtag !== "function") return;
+				gtag("event", "outbound_click", {
+					link_url: url.href,
+					link_text: (link.textContent || "").trim(),
+				});
+			});
 		</script>
 	</>
 )}

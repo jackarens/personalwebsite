@@ -74,6 +74,7 @@ const readingTime: string = remarkPluginFrontmatter.readingTime;
 	}
 
 	scrollBtn.addEventListener("click", () => {
+		document.dispatchEvent(new CustomEvent("analytics:back-to-top"));
 		document.documentElement.scrollTo({ behavior: "smooth", top: 0 });
 	});
 
@@ -81,8 +82,21 @@ const readingTime: string = remarkPluginFrontmatter.readingTime;
 	observer.observe(targetHeader);
 
 	// Initialize medium-zoom for blog post images
-	mediumZoom(".prose img", {
+	const zoom = mediumZoom(".prose img", {
 		margin: 24,
 		background: "rgba(0, 0, 0, 0.9)",
+	});
+
+	zoom.on("open", (event) => {
+		const target = event?.target;
+		const img = target instanceof HTMLImageElement ? target : null;
+		document.dispatchEvent(
+			new CustomEvent("analytics:image-zoom", {
+				detail: {
+					src: img?.currentSrc || img?.src || null,
+					alt: img?.alt || null,
+				},
+			}),
+		);
 	});
 </script>

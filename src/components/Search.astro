@@ -125,12 +125,16 @@ import "@/styles/blocks/search.css";
 			}
 
 			this.#dialog.showModal();
+			document.dispatchEvent(new CustomEvent("analytics:search-open"));
 			this.querySelector("input")?.focus();
 			event?.stopPropagation();
 			window.addEventListener("click", this.onWindowClick, { signal: this.#controller.signal });
 		};
 
-		closeModal = () => this.#dialog?.close();
+		closeModal = () => {
+			this.#dialog?.close();
+			document.dispatchEvent(new CustomEvent("analytics:search-close"));
+		};
 
 		onWindowClick = (event: MouseEvent) => {
 			// check if it's a link

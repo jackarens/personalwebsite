@@ -53,6 +53,9 @@ const dateTimeOptions: Intl.DateTimeFormatOptions = {
 		data.slidesUrl && (
 			<a
 				href={data.slidesUrl}
+				data-analytics="view-slides"
+				target="_blank"
+				rel="noopener noreferrer"
 				class="hover:bg-accent inline-flex items-center gap-2 rounded border border-current px-3 py-1.5 text-sm font-medium transition-colors hover:text-white"
 			>
 				<svg
