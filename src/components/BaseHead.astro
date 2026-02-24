@@ -73,6 +73,19 @@ const socialImageURL = new URL(ogImage ? ogImage : "/social-card.png", Astro.url
 <link href="/rss.xml" title="Blog" rel="alternate" type="application/rss+xml" />
 
 {/* Webmentions */}
+
+{import.meta.env.PROD && (
+	<>
+		{/* Google tag (gtag.js) */}
+		<script async src="https://www.googletagmanager.com/gtag/js?id=G-8Z6GJL61CV"></script>
+		<script is:inline>
+			window.dataLayer = window.dataLayer || [];
+			function gtag(){dataLayer.push(arguments);}
+			gtag('js', new Date());
+			gtag('config', 'G-8Z6GJL61CV');
+		</script>
+	</>
+)}
 {
 	WEBMENTION_URL && (
 		<>
