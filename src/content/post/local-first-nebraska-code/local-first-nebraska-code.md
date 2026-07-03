@@ -1,16 +1,41 @@
 ---
-title: "The Architecture of Local-first Web Apps (Raikes Design Studio Speaker Series 2026)"
-description: "Our journey implementing a local-first architecture at Layer - covering context, challenges, and solutions for building offline-capable web applications."
-publishDate: "2026-02-17"
-updatedDate: "17 Feb 2026"
-tags: ["software-architecture", "local-first", "web-development", "offline"]
-slidesUrl: "/slides/local-first"
-pinned: true
+title: "Local-first Web Apps"
+description: "A tour of the local-first paradigm - why it exists, what problems it solves, and how to build offline-capable web applications, using Layer's architecture as a real-world reference."
+publishDate: "2026-07-08"
+updatedDate: "8 Jul 2026"
+tags:
+  [
+    "software-architecture",
+    "local-first",
+    "web-development",
+    "offline",
+    "nebraska-code",
+  ]
+slidesUrl: "/slides/local-first-nebraska-code"
+draft: true
+pinned: false
 ---
 
 ## Why this Article
 
 Our journey to implementing a local first web application at [Layer](https://layer.team) started as a way to resolve issues with having the data we wanted for clients readily accessible, and turned into a long, comprehensive architecture buildout with quite a few obstacles. Along the way, we were inspired by resources put out there on similar journeys at [Linear](https://linear.app/now/scaling-the-linear-sync-engine) and even [blog posts from smaller companies like us](https://marcoapp.io/blog/offline-first-landscape), so I thought the right thing to do was to pay it forward. This article is a write-up of our experience building a local-first architecture for Layer, a construction management platform used in architecture firms and on job sites around the world. I'll cover the context that led us to this decision, the challenges we faced, and the solutions we implemented.
+
+## What is Local-first, Anyway?
+
+Before I get into the Layer-specific mess we found ourselves in, it's worth being precise about what "local-first" actually means, since the term gets thrown around pretty loosely. Most web apps are what I'd call cloud-first: every read and write round-trips to a server, so offline means broken and a bad network means a bad app. Local-first flips that - your device keeps a full working copy of the data, reads and writes hit that copy first, and syncing to a server happens in the background, off the critical path of anything the user is trying to do. (The server still holds the authoritative copy - more on that later.)
+
+The term comes from a 2019 essay by Martin Kleppmann and a few co-authors at Ink & Switch, ["Local-first software: you own your data, in spite of the cloud"](https://www.inkandswitch.com/local-first/), which lays out seven "ideals" for this kind of software. I won't rehash all seven, but the ones that mattered most to us were: it should be fast (no spinners for data you already have), it should work fully offline (not a degraded mode), it should follow you across devices, and it should let multiple people work on the same data at the same time.
+
+It helps to think of this as a spectrum rather than a binary:
+
+| Style                 | Writes Land First On   |   Offline    | Example              |
+| --------------------- | ---------------------- | :----------: | -------------------- |
+| Traditional CRUD      | Server                 |      ❌      | Most CRUD SaaS       |
+| Offline-first (cache) | Server (queued if not) |   Partial    | Many mobile apps     |
+| **Local-first**       | **Client**             |      ✅      | Linear, Figma, Layer |
+| Local-only            | Client only            | ✅ (no sync) | Obsidian vaults      |
+
+Layer landed solidly in the local-first column, for reasons that'll make a lot more sense once you see the problem we were actually trying to solve.
 
 ## Introduction
 
@@ -74,6 +99,16 @@ A few things had us well positioned to implement a local-first architecture. Fir
 
 Additional capabilities would also come out of our local-first architecture beyond the initial motivation of data availability and offline functionality. For example, we would be able to implement more powerful filtering and sorting capabilities that could be performed locally without the need for additional network requests. In turn this has led to an opportunity to share filter/sort logic between the front-end and back-end, as we can use the same JavaScript filter engine on both sides to ensure consistency in how data is filtered and sorted regardless of whether the user is online or offline.
 
+## The Local-first Landscape
+
+Before I get into the specific tools we picked, it's worth pointing out that we're not exactly trailblazers here. There are broadly two ways people build this stuff:
+
+**CRDT-based** (Automerge, Yjs) - conflict resolution is handled by math. There's no central authority; every replica can merge independently and mathematically converge on the same state. Great fit for peer-to-peer setups and collaborative text editing.
+
+**Sync-engine / client-authoritative** (Replicache, Zero, ElectricSQL, PowerSync) - the server stays the source of truth, and the client is a smart cache that queues up mutations and reconciles via versioning rather than merge functions. This is the camp Layer falls into.
+
+And Layer is far from the only one doing this. Linear built their own sync engine and wrote [one of the best public deep-dives](https://linear.app/now/scaling-the-linear-sync-engine) on the pattern - genuinely, go read it before you build your own, I wish it had existed when we started. Figma's multiplayer engine keeps every cursor and shape in sync locally. Obsidian just keeps your vault on disk and treats sync as optional. Actual Budget does CRDT-based sync and is open source if you want to poke around a real implementation.
+
 ### Providers
 
 We explored a handful of providers during our research into local-first architectures, including Firestore's offline capabilities, Replicache, and RxDB. Our primary concerns were speed, reliability, and ease of integration. We ultimately chose Replicache for its maturity and control over the implementation. It was later open-sourced, which gave us confidence in its long-term viability. As mentioned, we had already been using Firestore for our primary data storage, but its offline capabilities were insufficient for our needs, particularly in terms of control over storage duration and scope; in terms of control over storage duration and scope, it had none. RxDB had some promising features and excellent marketing, but much of it was locked behind a rather sketchy paywall and seemed overall less mature.
@@ -114,6 +149,10 @@ For Layer, this means storing a version number on the project and each element d
 :::
 
 Bulk updates to the project (e.g. a change that affects multiple elements) are handled by incrementing the project version and updating the version numbers of all affected elements in a single transaction. This ensures that all changes are properly versioned and that clients can synchronize changes without conflicts.
+
+#### Conflict Resolution
+
+The question everyone asks: what happens when two people edit the same thing at once? Our answer is last write wins - with receipts. When two clients touch the same field, the later push takes it. That sounds cavalier until you add the second half: every change is logged, so each element carries its full history, and users can roll back any change they don't like. In practice, construction data rarely collides on the exact same field, and when it does, "put it back how it was" is what users actually want - an undo beats a merge dialog. The same log doubles as change tracking (who changed what, when), which turned out to be a feature users wanted anyway.
 
 ### Overview
 
@@ -175,6 +214,19 @@ function push(clientId, mutations) {
 ```
 
 The key insight here is that the push endpoint must be **idempotent**—if a client retries a mutation that was already processed, the server should recognize it and skip it. This is critical for handling network failures gracefully.
+
+## Tradeoffs: When _Not_ to Reach for This
+
+I don't want to make this sound like a free lunch, because it wasn't. Local-first is a bad fit if any of these are true for you:
+
+- Your data needs server-enforced authorization on _every_ read (local-first inherently means the client is holding data it might not always have the latest permission check against)
+- Your dataset can't reasonably fit on a client device
+- You need heavy real-time collaborative editing—at that point, reach for an actual CRDT library instead of rolling your own conflict resolution
+- You're a small team without the bandwidth to own the extra client and infrastructure complexity this introduces
+
+:::warning
+Local-first doesn't remove complexity, it just moves it. You're trading server complexity for client complexity, and now your users' laptops are paying part of the bill.
+:::
 
 ## Challenges
 
@@ -376,3 +428,22 @@ async function processQueueItem(item: QueueItem) {
 ```
 
 The queue processor can also optionally pull similar entries from the queue and batch them together, reducing the total number of transactions needed. This approach ensures that even under high contention, all updates eventually succeed without manual intervention.
+
+## Lessons if You're Considering This
+
+If I were starting over, here's what I'd tell myself before writing a single line of sync code:
+
+1. Find your natural data boundary (workspace, project, tenant—whatever fits your domain) so you have something to bound the size of what you're loading upfront
+2. Match your sync engine to your actual database model—NoSQL and SQL point you toward pretty different tools
+3. Budget for client storage and compute, not just the server costs you're used to thinking about
+4. Design your bootstrap strategy before your datasets get huge, not after you're paged about a slow initial load
+5. Expect contention at the edges—bulk jobs and background processes will find the cracks even when your client-side story is smooth
+
+## Resources
+
+A few things worth reading if you want to go deeper than this post:
+
+- ["Local-first software"](https://www.inkandswitch.com/local-first/) - Ink & Switch, 2019
+- ["Scaling the Linear Sync Engine"](https://linear.app/now/scaling-the-linear-sync-engine)
+- ["The Offline-first Landscape"](https://marcoapp.io/blog/offline-first-landscape)
+- Replicache, Zero, ElectricSQL, PowerSync, Automerge, Yjs—worth a look depending on your stack
