@@ -9,9 +9,10 @@ import Slide from "@/components/slides/Slide.astro";
 import Fragment from "@/components/slides/Fragment.astro";
 import IntroSlides from "@/components/slides/IntroSlides.astro";
 import Callout from "@/components/slides/Callout.astro";
+import SectionBg from "@/components/slides/SectionBg.astro";
 
 import issuesTable from "./issues-table.png";
-import architectureDiagram from "./architecture-diagram.png";
+import architectureDiagram from "./architecture-diagram.svg";
 import databaseStructure from "./database-structure.png";
 import xkcd378 from "./xkcd-378.png";
 import xkcd908 from "./xkcd-908.png";
@@ -33,7 +34,7 @@ import how05 from "./how-05.svg";
 <p class="author">Jack Arens</p>
 </Slide>
 
-<IntroSlides />
+<IntroSlides vertical={false} />
 
 <Slide>
 ## Agenda
@@ -57,6 +58,7 @@ import how05 from "./how-05.svg";
 </Slide>
 
 <Slide class="section-header">
+<SectionBg glyph="🌐" />
 ## What is Local-first?
 
 <p class="mt-8! opacity-70!">Not something you `npm install`</p>
@@ -66,25 +68,36 @@ import how05 from "./how-05.svg";
 ## The Problem With "The Cloud"
 
 <div class="r-stack">
-<div class="m-auto flex w-full items-center justify-center gap-12">
-	<div class="flex flex-1 flex-col items-center gap-4 rounded-lg border border-gray-500 bg-gray-500/10 p-12">
-		<div class="text-9xl">🖥️</div>
-		<div class="text-2xl font-semibold">Client</div>
+	<div class="m-auto flex w-full items-center justify-center gap-12">
+		<div class="flex flex-1 flex-col items-center gap-4 rounded-lg border border-gray-500 bg-gray-500/10 p-12">
+			<div class="text-9xl">🖥️</div>
+			<div class="text-2xl font-semibold">Client</div>
+		</div>
+		<div class="fragment flex flex-col items-center gap-2 text-xl opacity-70">
+			<div class="text-5xl">⏱️</div>
+			<span>request →</span>
+			<span>← response</span>
+		</div>
+		<div class="flex flex-1 flex-col items-center gap-4 rounded-lg border border-gray-500 bg-gray-500/10 p-12">
+			<div class="text-9xl">☁️</div>
+			<div class="text-2xl font-semibold">Server</div>
+		</div>
 	</div>
-	<div class="fragment flex flex-col items-center gap-2 text-xl opacity-70">
-		<div class="text-5xl">⏱️</div>
-		<span>request →</span>
-		<span>← response</span>
-	</div>
-	<div class="flex flex-1 flex-col items-center gap-4 rounded-lg border border-gray-500 bg-gray-500/10 p-12">
-		<div class="text-9xl">☁️</div>
-		<div class="text-2xl font-semibold">Server</div>
-	</div>
-</div>
-<Fragment as="div" class="flex h-full w-full flex-col items-center justify-center">
-	<Image src={xkcd908} alt="XKCD 908 - The Cloud" layout="full-width" fit="contain" class="min-h-0" />
-	<div class="mt-2 text-center text-sm opacity-70">_XKCD 908: The Cloud_ by Randall Munroe 2.5</div>
-</Fragment>
+	<Fragment
+		as="div"
+		class="flex h-full w-full flex-col items-center justify-center"
+	>
+		<Image
+			src={xkcd908}
+			alt="XKCD 908 - The Cloud"
+			layout="full-width"
+			fit="contain"
+			class="min-h-0"
+		/>
+		<div class="mt-2 text-center text-sm opacity-70">
+			_XKCD 908: The Cloud_ by Randall Munroe 2.5
+		</div>
+	</Fragment>
 </div>
 
 <ul class="p-12">
@@ -109,15 +122,15 @@ import how05 from "./how-05.svg";
 </ul>
 
 <Fragment as="div">
-	<Callout type="note" title='Coined by Ink & Switch, 2019'>
-		"Local-first software: you own your data, in spite of the cloud" — Kleppmann, Wiggins, van
-		Hardenberg, McGranaghan
+	<Callout type="note" title="Coined by Ink & Switch, 2019">
+		"Local-first software: you own your data, in spite of the cloud" —
+		Kleppmann, Wiggins, van Hardenberg, McGranaghan
 	</Callout>
 </Fragment>
 
-<p class="fragment mt-4 text-sm opacity-60">
-	* the server still holds the authoritative copy - more on that later
-</p>
+<Fragment as="div" class="mt-4 text-sm">
+	<span class="opacity-60">* the server still holds the authoritative copy - more on that later</span>
+</Fragment>
 </Slide>
 
 <Slide>
@@ -134,16 +147,17 @@ import how05 from "./how-05.svg";
 <Slide>
 ## The Spectrum
 
-| Style                 | Writes Land First On   |   Offline    | Example              |
-| --------------------- | ---------------------- | :----------: | -------------------- |
-| Traditional CRUD      | Server                 |      ❌      | Most CRUD SaaS       |
-| Offline-first (cache) | Server (queued if not) |   Partial    | Many mobile apps     |
-| **Local-first**       | **Client**             |      ✅      | Linear, Figma, Layer |
-| Local-only            | Client only            | ✅ (no sync) | Obsidian vaults      |
+| Style                     | Writes Land First On   |   Offline    | Example              |
+| ------------------------- | ---------------------- | :----------: | -------------------- |
+| Traditional CRUD          | Server                 |      ❌      | Most CRUD SaaS       |
+| Offline-available (cache) | Server (queued if not) |   Partial    | Many mobile apps     |
+| **Local-first**           | **Client**             |      ✅      | Linear, Figma, Layer |
+| Local-only                | Client only            | ✅ (no sync) | Obsidian vaults      |
 
 </Slide>
 
 <Slide class="section-header">
+<SectionBg glyph="🏗️" />
 ## Case Study: Layer
 
 <p class="mt-8! opacity-70!">The story I actually lived through</p>
@@ -152,7 +166,7 @@ import how05 from "./how-05.svg";
 <Slide centerHeader={true}>
 ## The Problem at Layer
 
-<Fragment as="h3">Data Relationships at Scale</Fragment>
+<Fragment as="h3">Detouring through Data Relationships at Scale</Fragment>
 
 <div class="two-column">
 <div>
@@ -206,6 +220,7 @@ import how05 from "./how-05.svg";
 </Slide>
 
 <Slide class="section-header">
+<SectionBg />
 ## Solutions Considered
 
 | Approach          | Offline | Complexity |   Scale   |
@@ -284,6 +299,7 @@ import how05 from "./how-05.svg";
 </Slide>
 
 <Slide class="section-header">
+<SectionBg glyph="💾" />
 ## "What if all the data was just&hellip; always loaded?"
 
 </Slide>
@@ -321,29 +337,18 @@ import how05 from "./how-05.svg";
 ## Why Local-first Won
 <div class="two-column !items-start">
   <div class="pt-12">
-  <Fragment as="h3">Our Advantages/Situation</Fragment>
-    <ol class="p-12 pb-0">
-      <Fragment as="li">**Project-scoped data**: natural batching</Fragment>
-      <ul>
-        <Fragment as="li">~1,000–10,000 entries per project</Fragment>
-        <Fragment as="li">Feasible to load upfront</Fragment>
-      </ul>
-    </ol>
-    <ol class="p-12 pt-0">
+  <Fragment as="h3">Our Situation</Fragment>
+    <ul class="p-12">
+      <Fragment as="li">**Project-scoped data**: ~1k–10k per project, load upfront</Fragment>
       <Fragment as="li">**Users expect heavy apps** (Revit, etc.)</Fragment>
-      <Fragment as="li">**Offline is a must** for job sites</Fragment>
-    </ol>
+      <Fragment as="li">**Offline is a must** on job sites</Fragment>
+    </ul>
   </div>
   <div class="pt-12">
   <Fragment as="h3">Bonus Capabilities</Fragment>
     <ul class="p-12">
-      <Fragment as="li">Custom filtering & sorting</Fragment>
-      <ul>
-        <Fragment as="li">Shared filter logic (front-end + back-end)</Fragment>
-        <Fragment as="li">Consistent behavior online/offline</Fragment>
-      </ul>
-      <Fragment as="li">No loading spinners beyond initialization</Fragment>
-      <Fragment as="li">Instant Updates (No calls to ES)</Fragment>
+      <Fragment as="li">Shared filter/sort logic — consistent online &amp; off</Fragment>
+      <Fragment as="li">No loading spinners past init</Fragment>
       <Fragment as="li">Enables stateful features</Fragment>
     </ul>
   </div>
@@ -352,6 +357,7 @@ import how05 from "./how-05.svg";
 </Slide>
 
 <Slide class="section-header">
+<SectionBg glyph="🗺️" />
 ## The Local-first Landscape
 
 <p class="mt-8! opacity-70!">Layer isn't the only one doing this</p>
@@ -381,7 +387,7 @@ import how05 from "./how-05.svg";
 	<Fragment as="li">Server remains source of truth</Fragment>
 	<Fragment as="li">Client caches data & queues mutations</Fragment>
 	<Fragment as="li">Simpler conflict model: versioning, not merge functions</Fragment>
-	<Fragment as="li">The camp Layer landed in - menu in a minute</Fragment>
+	<Fragment as="li">The camp Layer landed in - more in a minute</Fragment>
 </ul>
 </div>
 </div>
@@ -499,6 +505,7 @@ Local-first needs a **sync engine** to handle data flow
 </Slide>
 
 <Slide class="section-header">
+<SectionBg glyph="💻" />
 ## Technical Implementation
 
 <p class="mt-8! opacity-70!">The part where I show you the code</p>
@@ -539,6 +546,26 @@ Local-first needs a **sync engine** to handle data flow
 	fit="contain"
 />
 
+</Slide>
+
+<Slide>
+## Architecture Components
+
+<ol class="p-12">
+	<Fragment as="li">
+		**Client**: Replicache service wraps all data access
+	</Fragment>
+	<Fragment as="li">**Primary DB**: Firestore (source of truth)</Fragment>
+	<Fragment as="li">**Push**: Client → Server updates</Fragment>
+	<Fragment as="li">**Pull**: Server → Client sync</Fragment>
+	<Fragment as="li">**External**: Cloud Functions, APIs - anything not directly user driven</Fragment>
+	<Fragment>
+		<Callout type="warning" title="Critical Rule">
+			**Nothing** gets written to Firestore without going through the
+			transaction and versioning system.
+		</Callout>
+	</Fragment>
+</ol>
 </Slide>
 
 <Slide>
@@ -591,26 +618,6 @@ Local-first needs a **sync engine** to handle data flow
   </div>
 </div>
 
-</Slide>
-
-<Slide>
-## Architecture Components
-
-<ol class="p-12">
-	<Fragment as="li">
-		**Client**: Replicache service wraps all data access
-	</Fragment>
-	<Fragment as="li">**Primary DB**: Firestore (source of truth)</Fragment>
-	<Fragment as="li">**Push**: Client → Server updates</Fragment>
-	<Fragment as="li">**Pull**: Server → Client sync</Fragment>
-	<Fragment as="li">**External**: Cloud Functions, APIs - anything not directly user driven</Fragment>
-	<Fragment>
-		<Callout type="warning" title="Critical Rule">
-			**Nothing** gets written to Firestore without going through the
-			transaction and versioning system.
-		</Callout>
-	</Fragment>
-</ol>
 </Slide>
 
 <Slide>
@@ -669,10 +676,16 @@ Local-first needs a **sync engine** to handle data flow
 **Our answer: last write wins - with receipts**
 
 <ul class="p-12">
-	<Fragment as="li">Two clients edit the same field → the later push wins</Fragment>
+	<Fragment as="li">
+		Two clients edit the same field → the later push wins
+	</Fragment>
 	<Fragment as="li">Every change is logged - full history per element</Fragment>
-	<Fragment as="li">Users can roll back any change - an undo beats a merge dialog</Fragment>
-	<Fragment as="li">Same log doubles as change tracking (who, what, when)</Fragment>
+	<Fragment as="li">
+		Users can roll back any change - an undo beats a merge dialog
+	</Fragment>
+	<Fragment as="li">
+		Same log doubles as change tracking (who, what, when)
+	</Fragment>
 </ul>
 
 <Fragment as="div">
@@ -700,6 +713,7 @@ Local-first needs a **sync engine** to handle data flow
 </Slide>
 
 <Slide class="section-header">
+<SectionBg glyph="🧩" />
 
 ## Challenges & Solutions
 
@@ -732,7 +746,7 @@ Local-first needs a **sync engine** to handle data flow
 
 <ul class="p-12">
 	<Fragment>
-		<Callout type="note" title="Key Insight">
+		<Callout type="note" title="Prior Art">
 			Inspired by Firestore's bundling mechanism for reducing database reads
 		</Callout>
 	</Fragment>
@@ -817,44 +831,25 @@ Local-first needs a **sync engine** to handle data flow
 </Slide>
 
 <Slide>
-<div class="two-column mt-0!">
+## Rich Model → Flat Index
+
+<div class="two-column">
   <div>
     <Fragment as="div">
     ```ts
+    // The rich, nested source model
     export interface LayerElement {
-      autoGenerateName?: LayerAutoGenerateNameOptions;
-      autoIncrementId?: number;
-      category: ContextItem<R>;
-      completed: boolean;
-      createdAt: number | T;
-      createdBy: R | string;
-      createdByRef: { email: string; id: string; name: string };
-      createdPhaseId?: string;
-      deletedAt?: number | T;
-      family: string;
-      fields: Record<string, any | LayerElementField<T, R>>;
       id?: string;
-      modelRevitId: string;
       name: string;
+      category: ContextItem<R>;
+      fields: Record<string, LayerElementField<T, R>>;
       params: Record<string, LayerRevitParameterValue<T, R>>;
-      rcVersion?: number;
       references?: { [key: string]: LayerReference<T, R> };
-      revitExternalId?: string;
-      revitId: null | string;
-      revitKind?: 'Forge' | 'Instance' | 'Type';
       searchableIndex: string[];
-      skipInitialization?: boolean;
-      spatialRelationships?: LayerForgeInstanceElement['spatialRelationships'];
-      starred: boolean;
       status: 'active' | 'archived';
-      templateName?: string;
-      type?: string;
-      typeId?: string;
+      rcVersion?: number;   // per-element sync version
       updatedAt: T;
-      updatedBy: R;
-      updatedByRef: { email: string; id: string; name: string };
-      versionHistory?: LayerForgeInstanceElement['versionHistory'];
-      viewables?: LayerForgeViewable[];
+      // …30+ more fields
     }
     ```
     </Fragment>
@@ -863,33 +858,18 @@ Local-first needs a **sync engine** to handle data flow
   <div>
     <Fragment as="div">
     ```ts
+    // Flattened + indexed for fast sort/filter
     export interface LokiDBElement {
-      _sortName: string;
-      /**
-      * Dynamic fields stored as key-value pairs
-      *
-      * Keys (IDs) represent one of the following:
-      * - A regular layer field ID (unique)
-      * - A Revit parameter ID
-      * - A spatial relationship ID + a categoryID (ex. 'spatialRelationships.<categoryId>')
-      */
-      [id: string]: unknown;
-      autoIncrementId: null | number;
-      categoryId: string;
-      completed: boolean;
-      createdAt: number;
-      createdBy: string;
-      createdPhaseId?: string;
       id: string;
-      modelRevitId?: string;
       name: string;
-      references: string[];
+      _sortName: string;            // pre-computed sort key
+      categoryId: string;
+      references: string[];         // flattened, not nested
       spatialRelationships: string[];
-      starred: boolean;
       status: string;
-      type?: string;
       updatedAt: number;
-      updatedBy: string;
+      // dynamic fields: field IDs, Revit params, relationships
+      [id: string]: unknown;
     }
     ```
     </Fragment>
@@ -982,6 +962,11 @@ Local-first needs a **sync engine** to handle data flow
 
 </Slide>
 
+<Slide class="section-header">
+<SectionBg glyph="🎓" />
+## Lessons & Resources
+</Slide>
+
 <Slide>
 ## Tradeoffs: When *Not* to Reach for This
 
@@ -1010,12 +995,12 @@ Local-first needs a **sync engine** to handle data flow
 ## Questions Worth Asking First
 
 <ul class="p-12">
-	<Fragment as="li">Where should data authority actually live — client, server, somewhere in between?</Fragment>
-	<Fragment as="li">What environments does this need to run in — browser, mobile, offline entirely?</Fragment>
-	<Fragment as="li">How big does a single user or scope's dataset realistically get? What is the scope?</Fragment>
-	<Fragment as="li">Who's allowed to see this data, and when do you check?</Fragment>
-	<Fragment as="li">What happens when two people touch the same record at once? What qualifies as a conflict?</Fragment>
-	<Fragment as="li">Is eventual consistency good enough, or does this need to be right *now*? Maximum allowed round trip time?</Fragment>
+	<Fragment as="li">Where does data authority live? Client, server, or between?</Fragment>
+	<Fragment as="li">What environments? Browser, mobile, fully offline?</Fragment>
+	<Fragment as="li">How big does one scope's dataset get?</Fragment>
+	<Fragment as="li">Who can see it — and when do you check?</Fragment>
+	<Fragment as="li">Two people edit the same record. Now what?</Fragment>
+	<Fragment as="li">Eventual consistency, or right *now*?</Fragment>
 </ul>
 </Slide>
 
@@ -1029,6 +1014,16 @@ Local-first needs a **sync engine** to handle data flow
 	<Fragment as="li">Your users' devices are part of your infrastructure now - budget for them</Fragment>
 	<Fragment as="li">We waited until a 40k-element project hurt - design your bootstrap story first</Fragment>
 	<Fragment as="li">Bulk jobs found cracks the client never hit - expect contention at the edges</Fragment>
+</ol>
+</Slide>
+
+<Slide>
+## If You Remember Three Things
+
+<ol class="p-12">
+  <Fragment as="li">Local-first means the data is *already there* - that's the whole pitch</Fragment>
+  <Fragment as="li">You don't remove complexity, you relocate it - and you sign up to own it</Fragment>
+  <Fragment as="li">The sync engine was the easy part - bootstrap, indexing, and contention were the real work</Fragment>
 </ol>
 </Slide>
 
@@ -1049,17 +1044,8 @@ Local-first needs a **sync engine** to handle data flow
 </ul>
 </Slide>
 
-<Slide>
-## If You Remember Three Things
-
-<ol class="p-12">
-  <Fragment as="li">Local-first means the data is *already there* - that's the whole pitch</Fragment>
-  <Fragment as="li">You don't remove complexity, you relocate it - and you sign up to own it</Fragment>
-  <Fragment as="li">The sync engine was the easy part - bootstrap, indexing, and contention were the real work</Fragment>
-</ol>
-</Slide>
-
 <Slide class="section-header">
+<SectionBg glyph="💬" />
 ## Questions?
 
 <p class="mt-8! opacity-70!">Slides & Writeup @ jackarens.com</p>

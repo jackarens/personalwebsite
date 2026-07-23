@@ -2,26 +2,17 @@
 import { Image } from "astro:assets";
 import Fragment from "./Fragment.astro";
 
-import familyPicture from "../../assets/family-picture.jpg";
 import layerAppView from "../../assets/layer-app-view.png";
 ---
 
 <section>
 	<h2>About Me</h2>
-	<div class="two-column">
-		<div class="portrait">
-			<Image src={familyPicture} layout="constrained" alt="Family Picture" fit="scale-down" />
-		</div>
-		<div>
-			<ul>
-				<Fragment as="li">2021 UNL &amp; Raikes School graduate (Cohort 2017)</Fragment>
-				<Fragment as="li">Engineering @ Layer since graduation</Fragment>
-				<Fragment as="li">Live in Lincoln, NE with my wife and kids</Fragment>
-				<Fragment as="li">Fun Fact: Enjoy gardening and DIY</Fragment>
-				<Fragment as="li">Fun Fact 2: I can ride a unicycle</Fragment>
-			</ul>
-		</div>
-	</div>
+	<ul>
+		<Fragment as="li">2021 UNL &amp; Raikes School graduate (Cohort 2017)</Fragment>
+		<Fragment as="li">Engineering @ Layer since graduation</Fragment>
+		<Fragment as="li">Live in Lincoln, NE</Fragment>
+		<Fragment as="li">Fun Fact: I can ride a unicycle 🦄</Fragment>
+	</ul>
 </section>
 
 <section>

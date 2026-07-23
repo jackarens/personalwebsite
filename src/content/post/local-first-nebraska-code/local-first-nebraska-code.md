@@ -1,6 +1,6 @@
 ---
 title: "Local-first Web Apps"
-description: "A tour of the local-first paradigm - why it exists, what problems it solves, and how to build offline-capable web applications, using Layer's architecture as a real-world reference."
+description: "A tour of the local-first paradigm @ Layer."
 publishDate: "2026-07-08"
 updatedDate: "8 Jul 2026"
 tags:
@@ -12,7 +12,7 @@ tags:
     "nebraska-code",
   ]
 slidesUrl: "/slides/local-first-nebraska-code"
-draft: true
+draft: false
 pinned: false
 ---
 
