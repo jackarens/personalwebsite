@@ -14,10 +14,9 @@ import SectionBg from "@/components/slides/SectionBg.astro";
 import issuesTable from "./issues-table.png";
 import architectureDiagram from "./architecture-diagram.svg";
 import databaseStructure from "./database-structure.png";
-import xkcd378 from "./xkcd-378.png";
 import xkcd908 from "./xkcd-908.png";
+import xkcd378 from "./xkcd-378.png";
 import alwaysHasBeen from "./always-has-been.png";
-import exponentialGrowth from "./exponential-growth.png";
 import localFiles from "./local-files.jpg";
 import oldLookupExample from "./old-lookup-example.png";
 import lokiQuery from "./loki-query.png";
@@ -166,19 +165,26 @@ import how05 from "./how-05.svg";
 <Slide centerHeader={true}>
 ## The Problem at Layer
 
-<Fragment as="h3">Detouring through Data Relationships at Scale</Fragment>
+<Fragment as="h3">Relational data at scale, everywhere in the UI</Fragment>
 
-<div class="two-column">
-<div>
+<div class="two-column items-start!">
+<div class="pt-8">
 <ul class="p-12">
   <Fragment as="li">**Issues**: description, cost, photos, assignees</Fragment>
   <Fragment as="li">**Users**: home base, specialty, contact info</Fragment>
-  <Fragment as="li">Users expect to see related data *inline*</Fragment>
-  <Fragment as="li">At 10k+ issues × 100s of users = 💀</Fragment>
+  <Fragment as="li">Users expect related data *inline*, everywhere</Fragment>
+  <Fragment as="li">10k+ issues × 100s of users = 💀</Fragment>
 </ul>
   </div>
-  <div>
-    <Image src={exponentialGrowth} alt="Exponential growth diagram" layout='full-width' fit='contain' class="fragment"/>
+  <div class="pt-8">
+    <Fragment as="h3">What that cost us</Fragment>
+    <ul class="p-12">
+      <Fragment as="li">Table views could only show shallow data</Fragment>
+      <Fragment as="li">Rich data only on click-through</Fragment>
+      <Fragment as="li">Same records re-fetched constantly</Fragment>
+      <Fragment as="li">**Data drift** from failed propagations</Fragment>
+      <Fragment as="li">**No offline** — job sites have no WiFi</Fragment>
+    </ul>
   </div>
 </div>
 </Slide>
@@ -186,37 +192,7 @@ import how05 from "./how-05.svg";
 <Slide>
 ## Example
 
-<div class="r-stack">
-<Fragment as="div" class="w-full h-full">
-  <Image src={oldLookupExample} alt="Example with old lookup functionality" layout="full-width" fit="contain" />
-</Fragment>
-<Fragment as="div" class="w-full h-full">
- <iframe class="layer-embedded-shared-view" src="https://public-staging.layer.team/view/ydb1bM0Y1tksene9EiXq?hideBorder=true" title="All Issues" width="100%" height="100%"> </iframe> 
-</Fragment>
-<Fragment as="div" class="w-full h-full">
- <iframe class="layer-embedded-shared-view" src="https://public-staging.layer.team/view/HD8DwjR1GoAlsPMgIHgU?hideBorder=true" title="All Users" width="100%" height="100%"> </iframe>
- </Fragment>
-</div>
-</Slide>
-
-<Slide>
-	## How This Impacted Users
-	<ul class="p-12">
-		<Fragment as="li">Limited data in table views</Fragment>
-		<Fragment as="li">Rich data only on click-through</Fragment>
-		<Fragment as="li">Same user data loaded multiple times</Fragment>
-		<Fragment as="li">Redundant requests, slower UX</Fragment>
-	</ul>
-	<Fragment as="h3">Additional Pain Points </Fragment>
-	<ul class="p-12">
-		<Fragment as="li">
-			**Data drift**: stale data from failed propagations
-		</Fragment>
-		<Fragment as="li">**Offline needs**: field sites don't have WiFi</Fragment>
-		<ul>
-			<Fragment as="li">Firestore offline wasn't enough control</Fragment>
-		</ul>
-	</ul>
+<Image src={oldLookupExample} alt="Example with old lookup functionality" layout="full-width" fit="contain" />
 </Slide>
 
 <Slide class="section-header">
@@ -269,35 +245,6 @@ import how05 from "./how-05.svg";
 </ul>
 </Slide>
 
-<Slide centerHeader={true}>
-## On-Demand Loading
-
-<div class="r-stack">
-	<ul class="p-12">
-		<Fragment as="li">Single endpoint loads all page data</Fragment>
-		<Fragment as="li">Most traditional solution</Fragment>
-		<Fragment as="li">Places least demand on user devices</Fragment>
-		<Fragment as="li">Complex, bug-prone reducers</Fragment>
-		<Fragment as="div">
-			<Callout type="warning" title="Zero offline support"></Callout>
-		</Fragment>
-	</ul>
-	<Fragment as="div" class="flex h-full w-full flex-col">
-		<Image
-			src={xkcd378}
-			alt="XKCD 378 - Real Programmers"
-			layout="full-width"
-			fit="contain"
-			class="min-h-0"
-		/>
-		<div class="mt-4 text-center">
-			_XKCD 378: Real Programmers_ by Randall Munroe 2.5
-		</div>
-	</Fragment>
-</div>
-
-</Slide>
-
 <Slide class="section-header">
 <SectionBg glyph="💾" />
 ## "What if all the data was just&hellip; always loaded?"
@@ -335,7 +282,7 @@ import how05 from "./how-05.svg";
 
 <Slide>
 ## Why Local-first Won
-<div class="two-column !items-start">
+<div class="two-column items-start!">
   <div class="pt-12">
   <Fragment as="h3">Our Situation</Fragment>
     <ul class="p-12">
@@ -354,6 +301,41 @@ import how05 from "./how-05.svg";
   </div>
 </div>
 
+</Slide>
+
+<Slide>
+## The Payoff: Instant Filter, Sort & Search
+
+Data is already on the client — so querying it costs **zero network**
+
+<div class="two-column items-start!">
+	<div class="pt-8">
+		<Fragment as="h3">Traditional</Fragment>
+		<ul class="p-12">
+			<Fragment as="li">Type → debounce → `GET /search?q=…`</Fragment>
+			<Fragment as="li">Spinner on every keystroke</Fragment>
+			<Fragment as="li">Breaks completely offline</Fragment>
+			<Fragment as="li">Filter/sort logic lives on the server</Fragment>
+			<Fragment as="li">Realtime is difficult</Fragment>
+		</ul>
+	</div>
+	<div class="pt-8">
+		<Fragment as="h3">Local-first</Fragment>
+		<ul class="p-12">
+			<Fragment as="li">Type → filter in memory → render</Fragment>
+			<Fragment as="li">Instant across thousands of records</Fragment>
+			<Fragment as="li">Works the same offline</Fragment>
+			<Fragment as="li">Same code path online &amp; off</Fragment>
+			<Fragment as="li">Realtime is default</Fragment>
+		</ul>
+	</div>
+</div>
+
+<Fragment as="div">
+  <Callout type="tip" title="The catch (more later)">
+    Fast queries mean the data has to be indexed on the client — that turned out to be real work
+  </Callout>
+</Fragment>
 </Slide>
 
 <Slide class="section-header">
@@ -387,7 +369,6 @@ import how05 from "./how-05.svg";
 	<Fragment as="li">Server remains source of truth</Fragment>
 	<Fragment as="li">Client caches data & queues mutations</Fragment>
 	<Fragment as="li">Simpler conflict model: versioning, not merge functions</Fragment>
-	<Fragment as="li">The camp Layer landed in - more in a minute</Fragment>
 </ul>
 </div>
 </div>
@@ -551,21 +532,31 @@ Local-first needs a **sync engine** to handle data flow
 <Slide>
 ## Architecture Components
 
-<ol class="p-12">
-	<Fragment as="li">
-		**Client**: Replicache service wraps all data access
+<div class="r-stack">
+	<ol class="p-12">
+		<Fragment as="li">
+			**Client**: Replicache service wraps all data access
+		</Fragment>
+		<Fragment as="li">**Primary DB**: Firestore (source of truth)</Fragment>
+		<Fragment as="li">**Push**: Client → Server updates</Fragment>
+		<Fragment as="li">**Pull**: Server → Client sync</Fragment>
+		<Fragment as="li">**External**: Cloud Functions, APIs - anything not directly user driven</Fragment>
+		<Fragment>
+			<Callout type="warning" title="Critical Rule">
+				**Nothing** gets written to Firestore without going through the
+				transaction and versioning system.
+			</Callout>
+		</Fragment>
+	</ol>
+	<Fragment as="div" class="flex h-full w-full items-center justify-center">
+		<Image
+			src={architectureDiagram}
+			alt="High-level architecture diagram"
+			layout="full-width"
+			fit="contain"
+		/>
 	</Fragment>
-	<Fragment as="li">**Primary DB**: Firestore (source of truth)</Fragment>
-	<Fragment as="li">**Push**: Client → Server updates</Fragment>
-	<Fragment as="li">**Pull**: Server → Client sync</Fragment>
-	<Fragment as="li">**External**: Cloud Functions, APIs - anything not directly user driven</Fragment>
-	<Fragment>
-		<Callout type="warning" title="Critical Rule">
-			**Nothing** gets written to Firestore without going through the
-			transaction and versioning system.
-		</Callout>
-	</Fragment>
-</ol>
+</div>
 </Slide>
 
 <Slide>
@@ -576,21 +567,43 @@ Local-first needs a **sync engine** to handle data flow
 
     ### Pull
 
-    <Fragment as="div">
-    ```ts
-    function pull(cookie):
-      // Get changes since client's last sync point
-      changes = getChangesSince(cookie)
+    <div class="r-stack w-full">
+      <div class="fragment fade-out w-full" data-fragment-index="1">
+      ```ts
+      function pull(cookie):
+        // Get changes since client's last sync point
+        changes = getChangesSince(cookie)
 
-      // Build patches from changes
-      patches = buildPatches(changes)
+        // Build patches from changes
+        patches = buildPatches(changes)
 
-      newCookie = getCurrentVersionCookie()
+        newCookie = getCurrentVersionCookie()
 
-      // Return patches and new sync point
-      return { patches, cookie: newCookie }
-    ```
-    </Fragment>
+        // Return patches and new sync point
+        return { patches, cookie: newCookie }
+      ```
+      </div>
+      <div class="fragment fade-in w-full" data-fragment-index="1">
+      ```ts
+      function pull(cookie):
+        changes = getChangesSince(cookie)
+
+        // 🔒 auth: only sync what this client may see
+        changes = filterByPermission(client, changes)
+
+        // 📄 pagination: cap the batch, page the rest
+        page    = changes.slice(0, MAX_BATCH)
+        hasMore = changes.length > MAX_BATCH
+
+        patches   = buildPatches(page)
+        newCookie = hasMore ? page.at(-1).version
+                            : getCurrentVersionCookie()
+
+        // client pulls again while hasMore
+        return { patches, cookie: newCookie, hasMore }
+      ```
+      </div>
+    </div>
 
   </div>
   <div>
@@ -666,23 +679,21 @@ Local-first needs a **sync engine** to handle data flow
 <ul class="p-12">
 	<Fragment as="li">Cookie = "the last version I've seen"</Fragment>
 	<Fragment as="li">Pull returns only elements with `rcVersion` above the cookie</Fragment>
-	<Fragment as="li">No diffing, no timestamps, no clock skew - just integers</Fragment>
+	<Fragment as="li">No diffing - just a version check (integers are easiest)</Fragment>
 </ul>
 </Slide>
 
 <Slide>
 ## Conflict Resolution
 
-**Our answer: last write wins - with receipts**
+**Our answer: last write wins**
 
 <ul class="p-12">
 	<Fragment as="li">
 		Two clients edit the same field → the later push wins
 	</Fragment>
-	<Fragment as="li">Every change is logged - full history per element</Fragment>
-	<Fragment as="li">
-		Users can roll back any change - an undo beats a merge dialog
-	</Fragment>
+	<Fragment as="li">Every change is logged</Fragment>
+	<Fragment as="li">Users can roll back any change</Fragment>
 	<Fragment as="li">
 		Same log doubles as change tracking (who, what, when)
 	</Fragment>
@@ -817,17 +828,33 @@ Local-first needs a **sync engine** to handle data flow
 <Slide>
 ## Filtering & Sorting
 
-**Problem**: Loading huge amounts of data (10,000+ elements) into memory is slow
+**Problem**: The instant queries we promised aren't free — sorting means loading it all into memory
 
-<ul class="p-12">
-	<Fragment as="li">To sort data, you have to load it all into memory</Fragment>
-	<Fragment as="li">Servers/databases solve this with indexing</Fragment>
-	<Fragment as="li">Replicache has some support for indexing, but not first class</Fragment>
-	<Fragment as="li">Filtering & sorting has similar gaps</Fragment>
-	<Fragment as="li">Solution: **LokiDB** for in-memory indexing</Fragment>
-	<Fragment as="li">Only index data needed for filter/sort</Fragment>
-	<Fragment as="li">Watch Replicache for live updates</Fragment>
-</ul>
+<div class="two-column items-start!">
+  <div>
+    <ul class="p-12">
+      <Fragment as="li">To sort data, you have to load it all into memory</Fragment>
+      <Fragment as="li">Servers/databases solve this with indexing</Fragment>
+      <Fragment as="li">Replicache indexing exists, but not first class</Fragment>
+      <Fragment as="li">Filtering & sorting has similar gaps</Fragment>
+      <Fragment as="li">Solution: **LokiDB** for in-memory indexing</Fragment>
+      <Fragment as="li">Only index data needed for filter/sort</Fragment>
+      <Fragment as="li">Watch Replicache for live updates</Fragment>
+    </ul>
+  </div>
+  <Fragment as="div" class="flex h-full w-full flex-col">
+    <Image
+      src={xkcd378}
+      alt="XKCD 378 - Real Programmers"
+      layout="full-width"
+      fit="contain"
+      class="min-h-0"
+    />
+    <div class="mt-4 text-center text-sm opacity-70">
+      _XKCD 378: Real Programmers_ by Randall Munroe 2.5
+    </div>
+  </Fragment>
+</div>
 </Slide>
 
 <Slide>
@@ -963,8 +990,8 @@ Local-first needs a **sync engine** to handle data flow
 </Slide>
 
 <Slide class="section-header">
-<SectionBg glyph="🎓" />
-## Lessons & Resources
+	<SectionBg glyph="🎓" />
+	## Lessons & Resources
 </Slide>
 
 <Slide>
@@ -998,7 +1025,6 @@ Local-first needs a **sync engine** to handle data flow
 	<Fragment as="li">Where does data authority live? Client, server, or between?</Fragment>
 	<Fragment as="li">What environments? Browser, mobile, fully offline?</Fragment>
 	<Fragment as="li">How big does one scope's dataset get?</Fragment>
-	<Fragment as="li">Who can see it — and when do you check?</Fragment>
 	<Fragment as="li">Two people edit the same record. Now what?</Fragment>
 	<Fragment as="li">Eventual consistency, or right *now*?</Fragment>
 </ul>
@@ -1050,4 +1076,31 @@ Local-first needs a **sync engine** to handle data flow
 
 <p class="mt-8! opacity-70!">Slides & Writeup @ jackarens.com</p>
 
+</Slide>
+
+<Slide>
+## What About…?
+
+<Fragment as="h3">The three you're about to ask</Fragment>
+
+<ul class="p-12">
+	<Fragment as="li">
+		**Can't a user just read IndexedDB?** -> the pull endpoint filters by
+		permission *before* it syncs; the client never receives what it can't see
+	</Fragment>
+	<Fragment as="li">
+		**What if the browser evicts the data?** -> quota limits are real; request
+		`navigator.storage.persist()`, and a re-sync rebuilds from the server
+	</Fragment>
+	<Fragment as="li">
+		**What happens when the schema changes?** -> version the local store; on
+		mismatch, drop and re-pull rather than migrate in place
+	</Fragment>
+</ul>
+
+<Fragment as="div">
+	<Callout type="note" title="The pattern">
+		The server stays authoritative — the client is a cache you can always rebuild
+	</Callout>
+</Fragment>
 </Slide>
