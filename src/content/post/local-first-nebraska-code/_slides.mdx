@@ -25,6 +25,21 @@ import how02 from "./how-02.svg";
 import how03 from "./how-03.svg";
 import how04 from "./how-04.svg";
 import how05 from "./how-05.svg";
+import pretalkQr from "./pretalk-qr.svg";
+
+<Slide class="title-slide">
+## Before we start
+
+<p class="subtitle">Completely Optional</p>
+
+<Image
+	src={pretalkQr}
+	alt="QR code linking to link.layer.team/ne-code"
+	class="m-0! h-auto w-[min(58vh,560px)] rounded-lg bg-white p-3"
+/>
+
+<p class="mt-6! text-[1.3em]">[link.layer.team/ne-code](https://link.layer.team/ne-code)</p>
+</Slide>
 
 <Slide class="title-slide">
 # Local-first Web Apps
@@ -103,7 +118,8 @@ import how05 from "./how-05.svg";
 	<Fragment as="li">Traditional web apps round-trip every read & write to a server</Fragment>
 	<Fragment as="li">Offline = broken</Fragment>
 	<Fragment as="li">Slow network = slow app</Fragment>
-	<Fragment as="li">Every UI update waits on a request you don't control</Fragment>
+	<Fragment as="li">Realtime UI is difficult</Fragment>
+	<Fragment as="li">Complex queries can be expensive</Fragment>
 </ul>
 </Slide>
 
@@ -127,7 +143,7 @@ import how05 from "./how-05.svg";
 	</Callout>
 </Fragment>
 
-<Fragment as="div" class="mt-4 text-sm">
+<Fragment as="div" class="mt-4">
 	<span class="opacity-60">* the server still holds the authoritative copy - more on that later</span>
 </Fragment>
 </Slide>
@@ -139,8 +155,15 @@ import how05 from "./how-05.svg";
 	<Fragment as="li">**Fast**: no spinners for your own data</Fragment>
 	<Fragment as="li">**Offline-capable**: fully, not degraded</Fragment>
 	<Fragment as="li">**Multi-device**: your data follows you</Fragment>
-	<Fragment as="li">**Collaboration**: multiple people, same data, at the same time</Fragment>
+	<Fragment as="li">
+		**Collaboration**: multiple people, same data, at the same time
+	</Fragment>
 </ol>
+
+<Fragment as="div" class="my-auto opacity-60">
+	The other three: **The Long Now** (your data outlives the app), **Security &
+	privacy by default**, **You retain ultimate ownership and control**
+</Fragment>
 </Slide>
 
 <Slide>
