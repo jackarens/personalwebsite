@@ -1,5 +1,5 @@
 ---
-title: "The Architecture of Local-first Web Apps (Raikes Design Studio Speaker Series 2026)"
+title: "The Architecture of Local-first Web Apps (Raikes)"
 description: "Our journey implementing a local-first architecture at Layer"
 publishDate: "2026-02-17"
 updatedDate: "17 Feb 2026"
