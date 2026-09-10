@@ -17,7 +17,12 @@ interface Props {
 const { glyph = "", tint = "#228B22", image, alt = "" } = Astro.props;
 ---
 
-<div class="section-bg" aria-hidden={image ? undefined : "true"} style={`--tint:${tint}`}>
+<div
+	class="section-bg"
+	data-bleed
+	aria-hidden={image ? undefined : "true"}
+	style={`--tint:${tint}`}
+>
 	{
 		image ? (
 			<>
@@ -75,7 +80,6 @@ const { glyph = "", tint = "#228B22", image, alt = "" } = Astro.props;
 	.section-bg-scrim {
 		position: absolute;
 		inset: 0;
-		background:
-			radial-gradient(80% 70% at 50% 45%, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.72));
+		background: radial-gradient(80% 70% at 50% 45%, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.72));
 	}
 </style>

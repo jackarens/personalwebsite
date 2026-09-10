@@ -49,6 +49,13 @@ const tag = defineCollection({
 const slides = defineCollection({
 	loader: glob({ base: "./src/content/post", pattern: "**/_slides.mdx" }),
 	schema: baseSchema.extend({
+		/**
+		 * Base font size in px against the fixed 1280x720 slide canvas.
+		 * Omitted means 32, which is what decks authored before the canvas was
+		 * pinned used. New decks should prefer something closer to 40 so type
+		 * reads from the back of a room.
+		 */
+		baseFontSize: z.number().optional(),
 		description: z.string().optional(),
 		postSlug: z.string().optional(),
 	}),

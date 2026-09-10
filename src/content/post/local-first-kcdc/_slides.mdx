@@ -1,0 +1,1239 @@
+---
+title: "Local-first Web Apps"
+description: "Building offline-capable web applications"
+postSlug: "local-first-kcdc/local-first-kcdc"
+baseFontSize: 42
+---
+
+import { Image } from "astro:assets";
+import Slide from "@/components/slides/Slide.astro";
+import Fragment from "@/components/slides/Fragment.astro";
+import IntroSlides from "@/components/slides/IntroSlides.astro";
+import Callout from "@/components/slides/Callout.astro";
+
+import kcdcSponsors from "./kcdc-sponsors.png";
+import sessionFeedbackQr from "./session-feedback-qr.png";
+import architectureDiagram from "./architecture-diagram.svg";
+import databaseStructure from "./database-structure.png";
+import localFiles from "./local-files.jpg";
+import xkcd908 from "./xkcd-908.png";
+import xkcd378 from "./xkcd-378.png";
+import alwaysHasBeen from "./always-has-been.png";
+import oldLookupExample from "./old-lookup-example.png";
+import lokiQuery from "./loki-query.png";
+import topCheckedOut from "./top-checked-out.svg";
+import how01 from "./how-01.svg";
+import how02 from "./how-02.svg";
+import how03 from "./how-03.svg";
+import how04 from "./how-04.svg";
+import how05 from "./how-05.svg";
+
+<Slide class="title-slide">
+# Stop Waiting for the Server
+
+<p class="subtitle mb-10!">The Architecture of Instant Web Apps</p>
+<p class="author">Jack Arens</p>
+<p class="role">Lead Software Architect @ Layer</p>
+</Slide>
+
+<Slide class="full-bleed">
+	<Image src={kcdcSponsors} alt="KCDC 2026 sponsors" data-bleed loading="eager" />
+</Slide>
+
+<Slide>
+## Agenda
+
+<ol class="px-4 [&>li]:mb-[0.45em]">
+	<Fragment as="li">What is Layer?</Fragment>
+	<Fragment as="li">What is Local-first?</Fragment>
+	<Fragment as="li">Why Layer needed it</Fragment>
+	<Fragment as="li">Picking an engine</Fragment>
+	<Fragment as="li">**Replicache, configured**</Fragment>
+	<Fragment as="li">**Mutators & conflicts**</Fragment>
+	<Fragment as="li">Versioning & sync</Fragment>
+	<Fragment as="li">Bootstrapping, indexing, contention</Fragment>
+</ol>
+</Slide>
+
+<IntroSlides personal={false} vertical={false} />
+
+<Slide class="section-header">
+## What is Local-first?
+
+</Slide>
+
+<Slide>
+## The Problem With "The Cloud"
+
+<div class="r-stack">
+	<ul class="p-4">
+		<Fragment as="li">Every read & write round-trips to a server</Fragment>
+		<Fragment as="li">Offline = broken</Fragment>
+		<Fragment as="li">Slow network = slow app</Fragment>
+		<Fragment as="li">Realtime UI is difficult</Fragment>
+	</ul>
+	<Fragment as="div" class="flex h-full w-full flex-col items-center justify-center">
+		<Image src={xkcd908} alt="XKCD 908 - The Cloud" layout="full-width" fit="contain" class="min-h-0" />
+		<div class="mt-2 text-center text-[0.5em] opacity-70">_XKCD 908: The Cloud_ by Randall Munroe 2.5</div>
+	</Fragment>
+</div>
+</Slide>
+
+<Slide>
+## Local-first Software
+
+<ul class="p-4">
+	<Fragment as="li">
+		The **local copy** is effectively complete<sup>*</sup>
+	</Fragment>
+	<Fragment as="li">
+		Sync happens in the background, off the critical path
+	</Fragment>
+	<Fragment as="li">Reads and writes feel instant, online or offline</Fragment>
+</ul>
+
+<Fragment as="div">
+	<Callout type="note" title="Coined by Ink & Switch, 2019">
+		"Local-first software: you own your data, in spite of the cloud"
+	</Callout>
+</Fragment>
+
+<Fragment as="div" class="mt-0 text-[0.6em]">
+	<span class="opacity-60">* the server still holds the authoritative copy</span>
+</Fragment>
+</Slide>
+
+<Slide>
+## The Spectrum
+
+{/* Written out as a table element rather than a Markdown table so each row
+    can carry a `fragment` class and reveal one at a time. */}
+
+<table>
+	<thead>
+		<tr>
+			<th>Style</th>
+			<th>Writes Land First On</th>
+			<th class="text-center">Offline</th>
+			<th>Example</th>
+		</tr>
+	</thead>
+	<tbody>
+		<Fragment as="tr">
+			<td>Traditional CRUD</td>
+			<td>Server</td>
+			<td class="text-center">❌</td>
+			<td>Most CRUD SaaS</td>
+		</Fragment>
+		<Fragment as="tr">
+			<td>Offline-available</td>
+			<td>Server (queued)</td>
+			<td class="text-center">Partial</td>
+			<td>Many mobile apps</td>
+		</Fragment>
+		<Fragment as="tr">
+			<td>
+				<strong>Local-first</strong>
+			</td>
+			<td>
+				<strong>Client</strong>
+			</td>
+			<td class="text-center">✅</td>
+			<td>Linear, Figma, Layer</td>
+		</Fragment>
+		<Fragment as="tr">
+			<td>Local-only</td>
+			<td>Client only</td>
+			<td class="text-center">✅ (no sync)</td>
+			<td>Obsidian vaults</td>
+		</Fragment>
+	</tbody>
+</table>
+
+</Slide>
+
+<Slide class="section-header">
+## Why Layer Needed It
+
+</Slide>
+
+<Slide>
+## The Problem at Layer
+
+<div class="two-column items-start!">
+	<div>
+		<Fragment as="h3">The shape of it</Fragment>
+		<ul class="p-4">
+			<Fragment as="li">Deeply relational construction data</Fragment>
+			<Fragment as="li">Related data expected *inline*, everywhere</Fragment>
+			<Fragment as="li">10k+ elements per project</Fragment>
+		</ul>
+	</div>
+	<div>
+		<Fragment as="h3">What it cost</Fragment>
+		<ul class="p-4">
+			<Fragment as="li">Tables could only show shallow data</Fragment>
+			<Fragment as="li">**Data drift** from failed propagations</Fragment>
+			<Fragment as="li">**No offline** — job sites have no WiFi</Fragment>
+		</ul>
+	</div>
+</div>
+</Slide>
+
+<Slide>
+## What We Tried First
+
+{/* Table element, not a Markdown table, so each row can be a fragment. */}
+
+<table>
+	<thead>
+		<tr>
+			<th>Approach</th>
+			<th class="text-center">Offline</th>
+			<th class="text-center">Complexity</th>
+			<th class="text-center">Scale</th>
+		</tr>
+	</thead>
+	<tbody>
+		<Fragment as="tr">
+			<td>Direct DB Calls</td>
+			<td class="text-center">❌</td>
+			<td class="text-center">Low</td>
+			<td class="text-center">Poor</td>
+		</Fragment>
+		<Fragment as="tr">
+			<td>Propagation</td>
+			<td class="text-center">❌</td>
+			<td class="text-center">Medium</td>
+			<td class="text-center">Poor</td>
+		</Fragment>
+		<Fragment as="tr">
+			<td>On-Demand Reducer</td>
+			<td class="text-center">❌</td>
+			<td class="text-center">High</td>
+			<td class="text-center">Variable</td>
+		</Fragment>
+		<Fragment as="tr">
+			<td>
+				<strong>Local-first</strong>
+			</td>
+			<td class="text-center">✅</td>
+			<td class="text-center">Medium</td>
+			<td class="text-center">Excellent</td>
+		</Fragment>
+	</tbody>
+</table>
+
+<Fragment as="div">
+	<Callout type="note" title="Propagation was the trap">
+		Copy related fields onto parent docs. Works until it doesn't.
+	</Callout>
+</Fragment>
+</Slide>
+
+<Slide>
+## Example
+
+<Image src={oldLookupExample} alt="Example with old lookup functionality" layout="full-width" fit="contain" />
+</Slide>
+
+<Slide class="section-header">
+
+## Picking an Engine
+
+</Slide>
+
+<Slide>
+## Two Ways to Build It
+
+<div class="two-column">
+<div class="fragment rounded-lg border border-pink-500/40 bg-pink-500/10 p-4">
+<Fragment as="h3">CRDT-based</Fragment>
+<ul class="p-2">
+	<Fragment as="li">Automerge, Yjs</Fragment>
+	<Fragment as="li">Math guarantees convergence</Fragment>
+	<Fragment as="li">No central authority required</Fragment>
+</ul>
+</div>
+<div class="fragment rounded-lg border border-lime-500/40 bg-lime-500/10 p-4">
+<Fragment as="h3">Sync-engine</Fragment>
+<ul class="p-2">
+	<Fragment as="li">Server stays source of truth</Fragment>
+	<Fragment as="li">Client caches & queues mutations</Fragment>
+	<Fragment as="li">Versioning, not merge functions</Fragment>
+</ul>
+</div>
+</div>
+</Slide>
+
+<Slide>
+## Why We Chose Replicache
+
+<ul class="p-0">
+	<Fragment as="li">We define the push/pull endpoints ourselves</Fragment>
+	<Fragment as="li">IndexedDB storage, observable reads</Fragment>
+	<Fragment as="li">Built for NoSQL — we were already on Firestore</Fragment>
+</ul>
+
+<Fragment as="div">
+	<Callout type="warning" title="Match the engine to your database">
+		Should be obvious, but isn't always clear
+	</Callout>
+</Fragment>
+</Slide>
+
+<Slide class="section-header">
+## Architecture Overview
+
+</Slide>
+
+<Slide>
+## How Replicache?
+
+<div class="r-stack">
+	<Image src={how01} alt="Replicache downloading data" class="fragment fade-in-then-out" />
+	<Image src={how02} alt="UI responding instantly" class="fragment fade-in-then-out" />
+	<Image src={how03} alt="Syncing changes" class="fragment fade-in-then-out" />
+	<Image src={how04} alt="Merging conflicts" class="fragment fade-in-then-out" />
+	<Image src={how05} alt="Offline support" class="fragment" />
+</div>
+</Slide>
+
+{/* Full-bleed: under a heading the 16:9 diagram scales to ~0.63 and its
+    labels stop being readable from the back of the room. The title lives on
+    the section-header slide above instead. */}
+
+<Slide class="full-bleed">
+	<Image src={architectureDiagram} alt="High-level architecture diagram" data-bleed />
+</Slide>
+
+<Slide class="section-header">
+## Replicache, Configured
+
+</Slide>
+
+<Slide>
+## The Constructor
+
+```ts
+const rep = new Replicache({
+	name: `${projectId}-${userId}`, // cache identity
+	pushURL: "/api/replicache/push", // client → server
+	pullURL: "/api/replicache/pull", // server → client
+	mutators, // how writes apply
+	indexes, // secondary lookups
+	schemaVersion: "2", // wire compatibility
+});
+```
+
+</Slide>
+
+<Slide>
+## `name`
+
+```ts
+name: `${projectId}-${isPublic ? PublicUserId : userToken.id}`,
+```
+
+<ul class="p-4">
+	<Fragment as="li">Picks the IndexedDB database, per user *and* per project</Fragment>
+	<Fragment as="li">Two people on one browser must not share a cache</Fragment>
+	<Fragment as="li">Public users can share — they can't push anyway</Fragment>
+</ul>
+</Slide>
+
+<Slide>
+## `kvStore`
+
+```ts
+kvStore: "idb",  // default: persists across reloads
+kvStore: "mem",  // in-memory: gone on refresh
+kvStore: { create: (name) => new MyStore(name), drop },
+```
+
+<ul class="p-4">
+	<Fragment as="li">`"mem"` is the right call in tests and short-lived tabs</Fragment>
+	<Fragment as="li">A custom store is the escape hatch for SQLite, OPFS, native shells</Fragment>
+	<Fragment as="li">We stayed on `"idb"` — but this is the seam if you ever leave the browser</Fragment>
+</ul>
+</Slide>
+
+{/* Rows click in one at a time, same as the other comparison tables. */}
+
+<Slide>
+## What Could Sit Under It
+
+<table class="text-[0.65em]!">
+	<thead>
+		<tr>
+			<th>Store</th>
+			<th>Shape</th>
+			<th>Catch</th>
+		</tr>
+	</thead>
+	<tbody>
+		<Fragment as="tr">
+			<td>`localStorage`</td>
+			<td>Sync strings</td>
+			<td>~5 MB, blocks the main thread</td>
+		</Fragment>
+		<Fragment as="tr">
+			<td>**IndexedDB**</td>
+			<td>Async KV + indexes</td>
+			<td>Clunky API, but everywhere</td>
+		</Fragment>
+		<Fragment as="tr">
+			<td>OPFS</td>
+			<td>Real files, sync in a worker</td>
+			<td>Newest of the bunch</td>
+		</Fragment>
+		<Fragment as="tr">
+			<td>SQLite (WASM)</td>
+			<td>SQL, usually on OPFS</td>
+			<td>Worker + bundle weight</td>
+		</Fragment>
+	</tbody>
+</table>
+
+<Fragment as="div" class="text-[0.85em]">
+	<Callout type="note" title="All of them evict">
+		Picking a store doesn't buy durability. That fight is two slides away.
+	</Callout>
+</Fragment>
+</Slide>
+
+<Slide>
+## Why We Stayed on IndexedDB
+
+<ul class="p-4">
+	<Fragment as="li">Battle-tested — we didn't want to debug the storage layer too</Fragment>
+	<Fragment as="li">One store for web **and** Capacitor iOS</Fragment>
+	<Fragment as="li">OPFS was too new in 2022</Fragment>
+	<Fragment as="li">And `kvStore` means we're not stuck with it</Fragment>
+</ul>
+</Slide>
+
+<Slide class="full-bleed">
+	<Image src={localFiles} alt="Hank Hill: i do not want to save to onedrive" data-bleed />
+</Slide>
+
+<Slide>
+## `indexes`
+
+```ts
+indexes: {
+  categories: {
+    jsonPointer: "/_indexes/category",
+  },
+},
+```
+
+<ul class="p-4">
+	<Fragment as="li">`jsonPointer` picks the value out of each stored document</Fragment>
+	<Fragment as="li">Set these up front — adding one later reindexes the cache</Fragment>
+</ul>
+</Slide>
+
+<Slide>
+## `pullInterval`
+
+```ts
+// Default is 60s. We watch the project document for an rcVersion
+// change instead, and pull only when there is something to pull.
+pullInterval: null,
+```
+
+<ul class="p-4">
+	<Fragment as="li">Polling every 60s costs a request per client per minute</Fragment>
+	<Fragment as="li">We already had a realtime listener on the project doc</Fragment>
+	<Fragment as="li">`null` means: only pull when *we* say so</Fragment>
+</ul>
+</Slide>
+
+<Slide>
+## `pushDelay`
+
+```ts
+// Mutations made within 1000ms of each other go out
+// as a single push request.
+pushDelay: 1000,
+
+requestOptions: { minDelayMs: 0 },  // don't throttle pulls
+```
+
+<ul class="p-4">
+	<Fragment as="li">Typing in a cell fires a mutation per keystroke</Fragment>
+	<Fragment as="li">The client stays instant either way — this is purely server load</Fragment>
+</ul>
+</Slide>
+
+<Slide>
+## `schemaVersion`
+
+```ts
+schemaVersion: "2",
+
+rep.onUpdateNeeded = async (reason) => {
+  showBlockingUpdateDialog();
+  await rep.close();
+};
+```
+
+<ul class="p-4">
+	<Fragment as="li">Sent on every push and pull — old clients get rejected</Fragment>
+	<Fragment as="li">`onUpdateNeeded` is your "please refresh" hook. Wire it early.</Fragment>
+</ul>
+</Slide>
+
+<Slide>
+## `puller` / `pusher`
+
+<div class="two-column items-start!">
+	<div>
+		<ul class="p-0">
+			<Fragment as="li">Replace the transport, keep the engine</Fragment>
+			<Fragment as="li">Retries, logging, and routing all live here</Fragment>
+		</ul>
+	</div>
+	<div>
+
+    <Fragment as="div">
+    ```ts
+puller: async (req, id) => {
+  const res = await standardPull(req, id);
+
+  if (serverOfferedBundle(res)) {
+    return this.bundledPull(
+      withCookie(req, res.cookie), id);
+  }
+  return res;
+},
+```
+    </Fragment>
+
+  </div>
+</div>
+</Slide>
+
+<Slide>
+## Persistent Storage
+
+```ts
+navigator.storage.persist().then((persisted) => {
+	console.log(persisted ? "Storage persisted" : "Storage evictable");
+});
+```
+
+<ul class="p-4">
+	<Fragment as="li">Without this, the browser may evict your entire cache</Fragment>
+	<Fragment as="li">Recoverable — a re-pull rebuilds it — but it's a slow morning</Fragment>
+</ul>
+</Slide>
+
+<Slide>
+## Who Actually Grants It
+
+| Browser       | Prompts?           | How it decides        |
+| ------------- | ------------------ | --------------------- |
+| Firefox       | Yes, asks the user | User's answer         |
+| Chrome / Edge | Never              | Engagement heuristics |
+| Safari 17+    | Never              | Engagement heuristics |
+
+<Fragment as="div">
+	<Callout type="note" title="Design for `persist()` returning false" />
+</Fragment>
+</Slide>
+
+<Slide>
+## Reading Documents
+
+```ts
+const prefix = `projects/${projectId}/elements/`;
+
+// One document — each query() is one consistent snapshot
+const element = await rep.query((tx) =>
+  tx.get<LayerElement>(`${prefix}${elementId}`),
+);
+
+// All of them — keys are sorted, so the prefix is the query
+const elements = await rep.query((tx) =>
+  tx.scan({ prefix }).values().toArray(),
+);
+```
+
+<ul class="p-4">
+	<Fragment as="li">No `WHERE` — past the prefix it's your code</Fragment>
+</ul>
+</Slide>
+
+<Slide>
+## Live Reads
+
+```ts
+// Re-runs whenever a write touches this scan — local or synced
+const unsubscribe = rep.subscribe(
+  (tx) =>
+    tx.scan({ indexName: "categories", prefix: categoryId })
+      .values().toArray(),
+  { onData: setElements },
+);
+```
+
+<ul class="p-4">
+	<Fragment as="li">`indexName` scans the `indexes` declared up front</Fragment>
+	<Fragment as="li">"Instant" lives here — no request, no spinner</Fragment>
+</ul>
+</Slide>
+
+<Slide class="section-header">
+## Mutators
+
+</Slide>
+
+<Slide>
+## A Mutator Runs Twice
+
+<div class="m-auto flex w-full items-center justify-center gap-6 text-center">
+	<div class="flex flex-1 flex-col items-center gap-3 rounded-lg border border-gray-500 bg-gray-500/10 p-6">
+		<div class="text-6xl">🖥️</div>
+		<div class="text-[0.7em] font-semibold">Client mutator</div>
+		<div class="text-[0.55em] opacity-70">optimistic, instant, disposable</div>
+	</div>
+	<Fragment as="div" class="text-4xl opacity-70">
+		→
+	</Fragment>
+	<div class="fragment flex flex-1 flex-col items-center gap-3 rounded-lg border border-green-500 bg-green-500/10 p-6">
+		<div class="text-6xl">🗄️</div>
+		<div class="text-[0.7em] font-semibold">Server mutator</div>
+		<div class="text-[0.55em] opacity-70">authoritative, versioned, final</div>
+	</div>
+</div>
+
+<Fragment as="div">
+	<Callout type="warning" title="Optimistic">
+		The client shows its own result until the server's version lands
+	</Callout>
+</Fragment>
+</Slide>
+
+<Slide>
+## Mutators Replay
+
+<Fragment as="div">
+	<Callout type="caution" title="Straight from our source">
+		"These mutators can be called by Replicache **multiple times**, even if we
+		only call them once."
+	</Callout>
+</Fragment>
+
+<ul class="p-0">
+	<Fragment as="li">Pending mutations replay after every pull</Fragment>
+	<Fragment as="li">No `Date.now()`, no `Math.random()`, no fetches</Fragment>
+</ul>
+</Slide>
+
+<Slide>
+## Our First Version
+
+```ts
+// Looks fine. Clobbers every field you didn't send.
+updateElement: async (tx, { elementId, elementData }) => {
+  return tx.set(`projects/${projectId}/elements/${elementId}`,
+                elementData);
+},
+```
+
+<ul class="p-4">
+	<Fragment as="li">`tx.set` replaces the whole value, and has no dot-notation</Fragment>
+	<Fragment as="li">Ana saves a due date, Ben saves a cost, Ben's write erases Ana's</Fragment>
+</ul>
+</Slide>
+
+<Slide>
+## What We Do Instead
+
+```ts
+updateElement: async (tx, args) => {
+  const element = await tx.get(
+    `projects/${projectId}/elements/${args.elementId}`);
+
+  // Replicache set() supports neither partial updates nor dot
+  // notation, so we rebuild the object with lodash set().
+  const update = cloneDeep(element);
+  Object.entries(args.elementData).forEach(([key, value]) => {
+    set(update, key, value);   // key: "fields.abc123.value"
+  });
+
+  return tx.set(`projects/${projectId}/elements/${args.elementId}`,
+                update);
+},
+```
+
+</Slide>
+
+<Slide>
+## Sending the Path
+
+```ts
+// What the UI sends for one cell edit:
+rep.mutate.updateElementField({
+	elementId: "el_9f2",
+	fieldId: "due_date",
+	fieldValue: { value: "2026-06-18", type: "date" },
+});
+```
+
+<ul class="p-4">
+	<Fragment as="li">The mutation names *exactly* the leaf that changed</Fragment>
+	<Fragment as="li">`updateElementField` sets `fields.${fieldId}` and nothing else</Fragment>
+</ul>
+</Slide>
+
+<Slide>
+## The Server Half
+
+```ts
+// Client fakes field-level writes by rebuilding the object.
+// Firestore does it natively, inside a transaction.
+for (const { elementData, id } of elements) {
+	t.update(db.doc(`projects/${projectId}/elements/${id}`), {
+		...elementData, // keys are dotted field paths
+		...elementUpdateMetadata,
+		rcVersion: nextVersion,
+	});
+}
+t.update(db.doc(`/projects/${projectId}`), { rcVersion: nextVersion });
+```
+
+<Fragment as="div">
+	<Callout type="tip" title="The client rebuilds the object. Firestore just writes the path." />
+</Fragment>
+</Slide>
+
+<Slide>
+## What Actually Collides
+
+<div class="two-column items-start!">
+	<div class="rounded-lg border border-green-500/40 bg-green-500/10 p-4">
+		<Fragment as="h3">No conflict</Fragment>
+		<div class="text-[0.6em] leading-loose">
+			Ana → `fields.due_date`
+			<br />
+			Ben → `fields.cost`
+		</div>
+		<div class="mt-4 text-[0.6em] leading-relaxed opacity-70">
+			Different paths. Both writes land. Nobody loses anything.
+		</div>
+	</div>
+	<div class="fragment rounded-lg border border-orange-500/40 bg-orange-500/10 p-4">
+		<Fragment as="h3">Conflict</Fragment>
+		<div class="text-[0.6em] leading-loose">
+			Ana → `fields.cost`
+			<br />
+			Ben → `fields.cost`
+		</div>
+		<div class="mt-4 text-[0.6em] leading-relaxed opacity-70">
+			Same path. Later push wins. Earlier value is in the log.
+		</div>
+	</div>
+</div>
+</Slide>
+
+<Slide>
+## Conflict Resolution
+
+**Our answer: last write wins, per field**
+
+<ul class="p-4">
+	<Fragment as="li">Every change is logged with who, what, and when</Fragment>
+	<Fragment as="li">Users can roll back any change</Fragment>
+	<Fragment as="li">The log doubles as our audit trail</Fragment>
+</ul>
+
+<Fragment as="div">
+	<Callout type="note" title="Why this works for us">
+		Collisions are rare, and undo beats a merge dialog
+	</Callout>
+</Fragment>
+</Slide>
+
+<Slide>
+## Deleting Is Its Own Mutator
+
+```ts
+// JSON has no undefined, and the server needs
+// an explicit FieldValue.delete().
+deleteElementProperty: async (tx, args) => {
+  const update = cloneDeep(await tx.get(key(args)));
+  unset(update, args.propertyKey);
+  return tx.set(key(args), update);
+},
+```
+
+<Fragment as="div">
+	<Callout type="caution" title="Archive, don't destroy">
+		`deleteElement` sets `status: "archived"`. Rollback needs the row.
+	</Callout>
+</Fragment>
+</Slide>
+
+<Slide>
+## Handling Replays on the Server
+
+```ts
+function push(clientId, mutations) {
+  for (const m of mutations) {
+    // Replays are normal, not exceptional.
+    if (m.id <= lastMutationID(clientId)) continue;
+    if (!hasPermission(clientId, m)) continue;
+
+    applyMutation(m);
+    recordMutationProcessed(clientId, m.id);
+  }
+}
+```
+
+</Slide>
+
+<Slide class="section-header">
+
+## Versioning & Sync
+
+</Slide>
+
+<Slide>
+## Per-Space Versioning
+
+<div class="r-stack">
+	<ul class="p-4">
+		<Fragment as="li">Each project carries an `rcVersion`</Fragment>
+		<Fragment as="li">Each element carries its own `rcVersion`</Fragment>
+		<Fragment as="li">Local changes are cached *without* versions</Fragment>
+		<Fragment as="li">The server transaction assigns them</Fragment>
+	</ul>
+	<Image src={databaseStructure} alt="Database structure diagram" class="fragment" layout="full-width" fit="contain" />
+</div>
+</Slide>
+
+<Slide>
+## Versioning in Action
+
+<div class="m-auto flex w-full items-center justify-center gap-6 text-center">
+	<div class="flex flex-1 flex-col items-center gap-3 rounded-lg border border-gray-500 bg-gray-500/10 p-6">
+		<div class="text-6xl">🖥️</div>
+		<div class="text-[0.65em] opacity-70">cookie: `v42`</div>
+	</div>
+	<div class="flex flex-col items-center gap-4 text-[0.6em] opacity-80">
+		<Fragment as="div">"anything after v42?" →</Fragment>
+		<Fragment as="div">← elements @ v43–v45, cookie `v45`</Fragment>
+	</div>
+	<div class="flex flex-1 flex-col items-center gap-3 rounded-lg border border-gray-500 bg-gray-500/10 p-6">
+		<div class="text-6xl">🗄️</div>
+		<div class="text-[0.65em] opacity-70">project @ `v45`</div>
+	</div>
+</div>
+
+<ul class="p-4">
+	<Fragment as="li">Cookie = "the last version I've seen"</Fragment>
+	<Fragment as="li">Just an integer comparison</Fragment>
+</ul>
+</Slide>
+
+<Slide>
+## Pull, With Permissions and Paging
+
+```ts
+function pull(cookie) {
+  // 🔒 only sync what this client may see
+  const changes = filterByPermission(
+    client, getChangesSince(cookie));
+  // 📄 cap the batch; client pulls again while hasMore
+  const page    = changes.slice(0, MAX_BATCH);
+  const hasMore = changes.length > MAX_BATCH;
+
+  return { patches: buildPatches(page), hasMore,
+           cookie: hasMore ? page.at(-1).version
+                           : currentCookie() };
+}
+```
+
+</Slide>
+
+<Slide centerHeader={true}>
+## It All Worked Great&hellip;
+
+<Fragment as="h3">&hellip;until the 40,000-element projects showed up</Fragment>
+
+<Fragment as="div" class="flex justify-center">
+	<Image src={alwaysHasBeen} alt="Always Has Been meme" layout="constrained" width={720} fit="contain" />
+</Fragment>
+</Slide>
+
+<Slide class="section-header">
+
+## Challenges & Solutions
+
+</Slide>
+
+<Slide>
+## Bootstrapping Large Projects
+
+**40k+ elements ≈ 150–200MB on first load**
+
+<ul class="p-0">
+	<Fragment as="li">Pull repeats until it returns no patches</Fragment>
+	<Fragment as="li">Every round trip re-serializes on the server</Fragment>
+</ul>
+
+<Fragment as="div">
+	<Callout type="tip" title="Key insight">
+		Serve *slightly stale* data first — the next pull catches up
+	</Callout>
+</Fragment>
+</Slide>
+
+{/* The bundle's other payoff: a million homepages, one set of reads. */}
+
+<Slide class="full-bleed">
+	<Image src={topCheckedOut} alt="Sample library homepage listing the top checked-out books" data-bleed />
+</Slide>
+
+<Slide>
+## Solution: Pre-serialized Bundles
+
+<ul class="p-0">
+	<Fragment as="li">Pre-serialize project data to a storage bucket</Fragment>
+	<Fragment as="li">70–90% of the data lands in one request</Fragment>
+	<Fragment as="li">Background sync picks up the rest</Fragment>
+</ul>
+
+<Fragment as="div">
+	<Callout type="note" title="Prior art: Firestore does exactly this" />
+</Fragment>
+
+<Fragment as="div">
+	<Callout type="tip" title="This is what the custom `puller` was for" />
+</Fragment>
+</Slide>
+
+<Slide>
+## Bundle Loading
+
+<div class="two-column items-start!">
+  <div>
+
+    ### Client
+
+    <Fragment as="div">
+    ```ts
+    function pull() {
+      const res = POST("/pull",
+        { cookie: stored() });
+
+      if (res.hasBundleUrl) {
+        const b = download(res.bundleUrl);
+        applyPatches(b.patches);
+        storeCookie(b.cookie);
+        pull();   // catch up
+      } else {
+        applyPatches(res.patches);
+        storeCookie(res.cookie);
+      }
+    }
+    ```
+    </Fragment>
+
+  </div>
+  <div>
+
+    ### Server
+
+    <Fragment as="div">
+    ```ts
+    function handlePull(cookie) {
+      if (cookie.fromVersion === 0) {
+        // fresh client
+        return {
+          bundleUrl: latestBundle(),
+          cookie: bundleCookie(),
+        };
+      }
+      return {
+        patches: buildPatches(
+          getChangesSince(cookie)),
+        cookie: currentCookie(),
+      };
+    }
+    ```
+    </Fragment>
+
+  </div>
+</div>
+</Slide>
+
+<Slide>
+## Reads Off the Main Thread
+
+```ts
+// A second Replicache instance, in a Web Worker, for reads only.
+new Replicache({
+	name: `${projectId}-${userId}`, // same cache
+	mutators: {}, // reads only — no writes
+	pullInterval: null,
+	schemaVersion: "2",
+});
+```
+
+<ul class="p-4">
+	<Fragment as="li">Big scans stopped janking the UI</Fragment>
+	<Fragment as="li">Falls back to the main thread if the worker won't start</Fragment>
+</ul>
+</Slide>
+
+<Slide>
+## Filter and Sort by Hand
+
+```ts
+const all = await rep.query((tx) =>
+  tx.scan({ prefix }).values().toArray(),
+);
+
+const rows = all
+  .filter((e) => e.status === "active" && matches(e, filters))
+  .sort((a, b) => a.name.localeCompare(b.name));
+```
+
+<Fragment as="div">
+	<Callout type="caution" title="Fine until it isn't">
+		Every keystroke rescans, rehydrates, and re-sorts every element in the project.
+	</Callout>
+</Fragment>
+</Slide>
+
+<Slide>
+## Filtering & Sorting
+
+**The instant queries we promised aren't free**
+
+<div class="two-column items-start!">
+	<div>
+		<ul class="p-4">
+			<Fragment as="li">Sorting means loading it all into memory</Fragment>
+			<Fragment as="li">Replicache indexing exists, but isn't first class</Fragment>
+			<Fragment as="li">Solution: **LokiDB** as an in-memory index</Fragment>
+			<Fragment as="li">Index only what filter/sort needs</Fragment>
+		</ul>
+	</div>
+	<Fragment as="div" class="flex h-full w-full flex-col">
+		<Image src={xkcd378} alt="XKCD 378 - Real Programmers" layout="full-width" fit="contain" class="min-h-0" />
+		<div class="mt-2 text-center text-[0.5em] opacity-70">_XKCD 378_ by Randall Munroe 2.5</div>
+	</Fragment>
+</div>
+</Slide>
+
+<Slide>
+## Rich Model → Flat Index
+
+<div class="two-column">
+  <div>
+
+    <Fragment as="div">
+    ```ts
+    // Source model
+    interface LayerElement {
+      id?: string;
+      name: string;
+      category: ContextItem<R>;
+      fields: Record<string,
+        LayerElementField<T, R>>;
+      references?: Record<string,
+        LayerReference<T, R>>;
+      status: 'active' | 'archived';
+      rcVersion?: number;
+      // …30+ more
+    }
+    ```
+    </Fragment>
+
+  </div>
+  <div>
+
+    <Fragment as="div">
+    ```ts
+    // Flattened for sort/filter
+    interface LokiDBElement {
+      id: string;
+      name: string;
+      _sortName: string;   // pre-computed
+      categoryId: string;
+      references: string[];  // flat
+      status: string;
+      updatedAt: number;
+      [id: string]: unknown;
+    }
+    ```
+    </Fragment>
+
+  </div>
+</div>
+</Slide>
+
+<Slide>
+## Querying the Index
+
+```ts
+const elements = db.addCollection("elements", {
+  indices: ["categoryId", "status", "_sortName"],
+});
+
+const rows = elements
+  .chain()
+  .find({ categoryId, status: "active" })  // binary index
+  .where((e) => e.updatedAt > since)       // anything dynamic
+  .simplesort("_sortName")
+  .offset(pageIndex * 50)
+  .limit(50)
+  .data();
+```
+</Slide>
+
+<Slide>
+	<Image
+		src={lokiQuery}
+		alt="LokiDB query example"
+		layout="full-width"
+		fit="contain"
+	/>
+</Slide>
+
+<Slide>
+## Update Contention
+
+**Bulk backend writes fail under contention**
+
+<ul class="p-4">
+	<Fragment as="li">The client never hits this — it retries at will</Fragment>
+	<Fragment as="li">Local changes can't contend with anything</Fragment>
+	<Fragment as="li">Server-side bulk updates absolutely can</Fragment>
+</ul>
+
+<Fragment as="div">
+	<Callout type="tip" title="Solution: queue + backoff">
+		Failed updates retry until they land, or get logged and dropped
+	</Callout>
+</Fragment>
+</Slide>
+
+<Slide>
+## Queue + Retry
+
+```ts
+async function processQueueItem(item) {
+  const { retryCount: n, maxRetries } = item;
+  try {
+    await applyUpdates(item.projectId, item.updates);
+  } catch (err) {
+    if (isContentionError(err) && n < maxRetries) {
+      await queue.enqueue(
+        { ...item, retryCount: n + 1 },
+        2 ** n * 1000);      // backoff
+    } else {
+      await logFailedUpdate(item, err);
+    }
+  }
+}
+```
+
+</Slide>
+
+<Slide class="section-header">
+
+## Lessons & Resources
+
+</Slide>
+
+<Slide>
+## When *Not* to Reach for This
+
+<ul class="p-0">
+	<Fragment as="li">Every read needs server-enforced authorization</Fragment>
+	<Fragment as="li">One scope's dataset can't fit on a device</Fragment>
+	<Fragment as="li">Heavy collaborative editing — use a CRDT library</Fragment>
+</ul>
+
+<Fragment as="div">
+	<Callout type="warning" title="No silver bullet">
+		You're making your users' laptops pay for it
+	</Callout>
+</Fragment>
+</Slide>
+
+<Slide>
+## Questions Worth Asking First
+
+<ul class="p-4">
+	<Fragment as="li">Where does data authority live?</Fragment>
+	<Fragment as="li">Browser, mobile, or fully offline?</Fragment>
+	<Fragment as="li">How big does one scope's dataset get?</Fragment>
+	<Fragment as="li">Two people edit the same record. Now what?</Fragment>
+	<Fragment as="li">Eventual consistency, or right *now*?</Fragment>
+</ul>
+</Slide>
+
+<Slide>
+## Lessons to Consider
+
+<ol class="p-4">
+	<Fragment as="li">Match the engine to your database, not the hype</Fragment>
+	<Fragment as="li">Your users' devices are infrastructure now</Fragment>
+	<Fragment as="li">Design the edge cases first — bootstrap, collisions, eviction</Fragment>
+	<Fragment as="li">Pick mutator granularity deliberately — it sets your conflict behavior</Fragment>
+</ol>
+</Slide>
+
+<Slide>
+## Resources
+
+<ul class="p-4">
+	<Fragment as="li">["Local-first software"](https://www.inkandswitch.com/local-first/) — Ink & Switch</Fragment>
+	<Fragment as="li">["Scaling the Linear Sync Engine"](https://linear.app/now/scaling-the-linear-sync-engine)</Fragment>
+	<Fragment as="li">["The Offline-first Landscape"](https://marcoapp.io/blog/offline-first-landscape)</Fragment>
+	<Fragment as="li">Replicache, Zero, ElectricSQL, PowerSync, Automerge, Yjs</Fragment>
+</ul>
+</Slide>
+
+<Slide class="section-header">
+## Questions?
+
+<p class="mt-8! opacity-70!">Slides & writeup @ jackarens.com</p>
+</Slide>
+
+<Slide>
+## What About…?
+
+<ul class="p-4">
+	<Fragment as="li">
+		**Can a user just read IndexedDB?** → pull filters by permission *before*
+		syncing
+	</Fragment>
+	<Fragment as="li">
+		**What if the browser evicts it?** → `navigator.storage.persist()`, then
+		re-sync
+	</Fragment>
+	<Fragment as="li">
+		**Schema changes?** → version the store; drop and re-pull
+	</Fragment>
+</ul>
+
+<Fragment as="div">
+	<Callout type="note" title="The server stays authoritative — the client is a rebuildable cache" />
+</Fragment>
+</Slide>
+
+<Slide class="qr-slide" centerHeader>
+## Session Feedback
+
+<div class="qr-plate">
+	<Image src={sessionFeedbackQr} alt="QR code linking to the KCDC session feedback form" />
+</div>
+</Slide>

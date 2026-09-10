@@ -2,18 +2,20 @@
 import IntroSlidesContent from "./IntroSlidesContent.astro";
 
 interface Props {
+	/** Include the personal "About Me" slide. Set false to open on Layer alone. */
+	personal?: boolean;
 	vertical?: boolean;
 }
 
-const { vertical = true } = Astro.props;
+const { personal = true, vertical = true } = Astro.props;
 ---
 
 {
 	vertical ? (
 		<section>
-			<IntroSlidesContent></IntroSlidesContent>
+			<IntroSlidesContent personal={personal} />
 		</section>
 	) : (
-		<IntroSlidesContent></IntroSlidesContent>
+		<IntroSlidesContent personal={personal} />
 	)
 }

@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080" role="img" aria-label="Sample library homepage listing the top checked-out books">
+	<!-- Authored in a 1920x1080 space: 1:1 with the projector, so strokes and
+	     text land on whole device pixels instead of blurring across halves. -->
+	<style>
+		.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+		.txt { fill: #f2f5f6; }
+		.muted { fill: #b6c0c5; }
+		.accent { fill: #56d364; }
+		.chrome { fill: #8f989e; }
+		.card { fill: #3a4145; stroke: #8d979d; stroke-width: 4; }
+		.cover-spine { fill: rgba(0,0,0,0.4); }
+	</style>
+
+	<!-- browser frame -->
+	<rect x="48" y="36" width="1824" height="1008" rx="21" fill="#262b2e" stroke="#9aa5ab" stroke-width="6" />
+	<path d="M48 57a21 21 0 0 1 21-21h1782a21 21 0 0 1 21 21v72H48z" fill="#31383c" />
+	<line x1="51" y1="129" x2="1869" y2="129" stroke="#9aa5ab" stroke-width="4" />
+	<circle class="chrome" cx="93" cy="82" r="10" />
+	<circle class="chrome" cx="129" cy="82" r="10" />
+	<circle class="chrome" cx="165" cy="82" r="10" />
+	<rect x="219" y="60" width="495" height="45" rx="22" fill="#1c2124" />
+	<text class="mono muted" x="249" y="92" font-size="25">citylibrary.app</text>
+
+	<!-- site nav -->
+	<rect class="accent" x="93" y="183" width="30" height="39" rx="4" />
+	<text class="mono txt" x="141" y="217" font-size="37" font-weight="700">CITY LIBRARY</text>
+	<text class="mono muted" x="1827" y="215" font-size="27" text-anchor="end">Browse · Holds · Account</text>
+
+	<!-- page heading -->
+	<text class="mono txt" x="93" y="324" font-size="60" font-weight="700">Top Checked Out This Week</text>
+	<text class="mono muted" x="93" y="378" font-size="27">The same 100 documents, on every visitor's homepage</text>
+
+	<!-- book cards -->
+	<g>
+		<rect class="card" x="93" y="432" width="310" height="495" rx="15" />
+		<rect x="120" y="459" width="256" height="294" rx="9" fill="#4f8f6a" />
+		<rect class="cover-spine" x="120" y="459" width="21" height="294" rx="4" />
+		<circle class="accent" cx="372" cy="486" r="24" />
+		<text class="mono" x="372" y="495" font-size="24" font-weight="700" fill="#12210f" text-anchor="middle">1</text>
+		<text class="mono txt" x="120" y="804" font-size="27">Copper Sky</text>
+		<text class="mono muted" x="120" y="843" font-size="22">M. Alvarez</text>
+		<text class="mono accent" x="120" y="891" font-size="24">1,204 checkouts</text>
+	</g>
+	<g>
+		<rect class="card" x="449" y="432" width="310" height="495" rx="15" />
+		<rect x="476" y="459" width="256" height="294" rx="9" fill="#6b6bb0" />
+		<rect class="cover-spine" x="476" y="459" width="21" height="294" rx="4" />
+		<circle class="accent" cx="728" cy="486" r="24" />
+		<text class="mono" x="728" y="495" font-size="24" font-weight="700" fill="#12210f" text-anchor="middle">2</text>
+		<text class="mono txt" x="476" y="804" font-size="27">Salt &amp; Cedar</text>
+		<text class="mono muted" x="476" y="843" font-size="22">J. Okonkwo</text>
+		<text class="mono accent" x="476" y="891" font-size="24">1,061 checkouts</text>
+	</g>
+	<g>
+		<rect class="card" x="805" y="432" width="310" height="495" rx="15" />
+		<rect x="832" y="459" width="256" height="294" rx="9" fill="#b07a3f" />
+		<rect class="cover-spine" x="832" y="459" width="21" height="294" rx="4" />
+		<circle class="accent" cx="1084" cy="486" r="24" />
+		<text class="mono" x="1084" y="495" font-size="24" font-weight="700" fill="#12210f" text-anchor="middle">3</text>
+		<text class="mono txt" x="832" y="804" font-size="25">The Quiet Ledger</text>
+		<text class="mono muted" x="832" y="843" font-size="22">R. Lindqvist</text>
+		<text class="mono accent" x="832" y="891" font-size="24">998 checkouts</text>
+	</g>
+	<g>
+		<rect class="card" x="1161" y="432" width="310" height="495" rx="15" />
+		<rect x="1188" y="459" width="256" height="294" rx="9" fill="#4a7fa8" />
+		<rect class="cover-spine" x="1188" y="459" width="21" height="294" rx="4" />
+		<circle class="accent" cx="1440" cy="486" r="24" />
+		<text class="mono" x="1440" y="495" font-size="24" font-weight="700" fill="#12210f" text-anchor="middle">4</text>
+		<text class="mono txt" x="1188" y="804" font-size="25">North of Nowhere</text>
+		<text class="mono muted" x="1188" y="843" font-size="22">P. Whitfield</text>
+		<text class="mono accent" x="1188" y="891" font-size="24">944 checkouts</text>
+	</g>
+	<g>
+		<rect class="card" x="1517" y="432" width="310" height="495" rx="15" />
+		<rect x="1544" y="459" width="256" height="294" rx="9" fill="#a8546a" />
+		<rect class="cover-spine" x="1544" y="459" width="21" height="294" rx="4" />
+		<circle class="accent" cx="1796" cy="486" r="24" />
+		<text class="mono" x="1796" y="495" font-size="24" font-weight="700" fill="#12210f" text-anchor="middle">5</text>
+		<text class="mono txt" x="1544" y="804" font-size="27">Silent Tide</text>
+		<text class="mono muted" x="1544" y="843" font-size="22">H. Bergman</text>
+		<text class="mono accent" x="1544" y="891" font-size="24">902 checkouts</text>
+	</g>
+</svg>

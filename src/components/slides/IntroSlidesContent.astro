@@ -4,27 +4,37 @@ import Fragment from "./Fragment.astro";
 
 import familyPicture from "../../assets/family-picture.jpg";
 import layerAppView from "../../assets/layer-app-view.png";
+
+interface Props {
+	personal?: boolean;
+}
+
+const { personal = true } = Astro.props;
 ---
 
-<section>
-	<h2>About Me</h2>
-	<div class="two-column">
-		<div class="portrait">
-			<Image src={familyPicture} layout="constrained" alt="Family Picture" fit="scale-down" />
-		</div>
-		<div>
-			<ul>
-				<Fragment as="li"
-					>2021 University of Nebraska–Lincoln &amp; Raikes School graduate (Cohort 2017)</Fragment
-				>
-				<Fragment as="li">Engineering @ Layer since graduation</Fragment>
-				<Fragment as="li">Live in Lincoln, NE with my wife and kids</Fragment>
-				<Fragment as="li">Fun Fact: Enjoy gardening and DIY</Fragment>
-				<Fragment as="li">Fun Fact 2: I can ride a unicycle 🦄</Fragment>
-			</ul>
-		</div>
-	</div>
-</section>
+{
+	personal && (
+		<section>
+			<h2>About Me</h2>
+			<div class="two-column">
+				<div class="portrait">
+					<Image src={familyPicture} layout="constrained" alt="Family Picture" fit="scale-down" />
+				</div>
+				<div>
+					<ul class="text-[0.62em]">
+						<Fragment as="li">
+							2021 University of Nebraska–Lincoln &amp; Raikes School graduate (Cohort 2017)
+						</Fragment>
+						<Fragment as="li">Engineering @ Layer since graduation</Fragment>
+						<Fragment as="li">Live in Lincoln, NE with my wife and kids</Fragment>
+						<Fragment as="li">Fun Fact: Enjoy gardening and DIY</Fragment>
+						<Fragment as="li">Fun Fact 2: I can ride a unicycle 🦄</Fragment>
+					</ul>
+				</div>
+			</div>
+		</section>
+	)
+}
 
 <section>
 	<h2>About Layer</h2>

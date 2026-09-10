@@ -6,3 +6,7 @@ node_modules
 
 pnpm-lock.yaml
 dist
+# Slide decks. Prettier collapses `<Slide>` wrappers onto one line, which stops
+# MDX parsing the markdown heading inside, and reformats illustrative code
+# fences into different code. Both produce broken slides.
+src/content/post/**/_slides.mdx

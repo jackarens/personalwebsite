@@ -6,10 +6,23 @@ import type { SiteMeta } from "@/types";
 import "@/styles/slides.css";
 
 interface Props {
+	/**
+	 * Base font size in px, expressed against the fixed 1280x720 slide canvas
+	 * (NOT against the viewport). Reveal scales the whole canvas to fit the
+	 * display, so this value determines how large type is *relative to the
+	 * slide*, and therefore how large it appears on any projector.
+	 *
+	 * Reveal's stock theme uses ~4.4% of canvas width (42px on a 960px canvas).
+	 * 40px here is ~3.1%, which is denser than stock but still readable at the
+	 * back of a conference room. Decks authored before this was configurable
+	 * stay at 32px so they render exactly as they were delivered.
+	 */
+	baseFontSize?: number | undefined;
 	meta: SiteMeta;
 }
 
 const {
+	baseFontSize = 32,
 	meta: { description = siteConfig.description, ogImage, title },
 } = Astro.props;
 ---
@@ -21,7 +34,7 @@ const {
 	</head>
 	<body>
 		<ThemeProvider />
-		<div class="reveal">
+		<div class="reveal" style={`--slide-base-font-size: ${baseFontSize}px;`}>
 			<div class="slides">
 				<slot />
 			</div>
@@ -38,8 +51,20 @@ const {
 					center: false,
 					transition: "slide",
 					backgroundTransition: "fade",
-					width: "100%",
-					height: "100%",
+					/**
+					 * Fixed logical canvas. This is the whole point of Reveal's
+					 * layout model: author against a constant 1280x720 box, and
+					 * Reveal applies a CSS `transform: scale()` so the deck fits
+					 * whatever display it lands on.
+					 *
+					 * Do NOT set these to "100%". Percentage dimensions disable
+					 * the scale transform (scale stays 1.0), which makes every
+					 * absolute px value in slides.css depend on the projector's
+					 * resolution. A deck laid out on a 1600px-tall display then
+					 * runs off the bottom of a 768px-tall projector.
+					 */
+					width: 1280,
+					height: 720,
 					margin: 0,
 				});
 				deck.initialize();
@@ -90,6 +115,170 @@ const {
 						overviewObserver = null;
 					}
 				});
+
+				/**
+				 * Overflow Guard
+				 *
+				 * The failure this exists to prevent: a slide looks fine on the
+				 * authoring display, then loses its bottom third on a lower
+				 * resolution projector. With a fixed canvas that can no longer
+				 * happen silently -- but content can still overrun the canvas
+				 * itself, and Reveal will happily clip it without complaint.
+				 *
+				 * So on every slide change we measure each descendant against
+				 * the slide's content box and flag anything hanging outside it.
+				 * Run through the deck once and every offending slide announces
+				 * itself.
+				 *
+				 * Active in `astro dev`, or on any build via `?check` in the URL.
+				 */
+				/** Canvas px of overflow to tolerate before reporting. Sub-pixel
+				    rounding in the scale transform and inline line boxes both land
+				    a couple of px past the edge without being visible. */
+				const SLACK = 4;
+
+				const overflowCheckEnabled =
+					import.meta.env.DEV || new URLSearchParams(location.search).has("check");
+
+				if (overflowCheckEnabled) {
+					// Handy from the console, and lets the headless size audit
+					// drive the deck without guessing at slide indices.
+					(window as unknown as { revealDeck: typeof deck }).revealDeck = deck;
+
+					const badge = document.createElement("div");
+					badge.className = "overflow-badge";
+					badge.hidden = true;
+					document.body.appendChild(badge);
+
+					/** Measure one slide's descendants against its content box. */
+					const measure = (slide: HTMLElement) => {
+						const box = slide.getBoundingClientRect();
+						const style = getComputedStyle(slide);
+						const scale = deck.getScale() || 1;
+
+						// Content should stay inside the padding, not merely inside
+						// the border box -- padding is the safe margin at the edge
+						// of the projected image.
+						const limitBottom = box.bottom - parseFloat(style.paddingBottom) * scale;
+						const limitRight = box.right - parseFloat(style.paddingRight) * scale;
+
+						let overBottom = 0;
+						let overRight = 0;
+
+						for (const el of Array.from(slide.querySelectorAll("*"))) {
+							// Skip anything not actually laid out (display:none, notes).
+							if (!el.getClientRects().length) continue;
+							// Background washes and cover images are supposed to run to
+							// the slide edge; mark them `data-bleed` so they and their
+							// children stop being reported as overflow.
+							if (el.closest("[data-bleed]")) continue;
+							const r = el.getBoundingClientRect();
+							overBottom = Math.max(overBottom, r.bottom - limitBottom);
+							overRight = Math.max(overRight, r.right - limitRight);
+						}
+
+						// Report in canvas px, so the number means something while
+						// editing the source rather than describing this display.
+						return {
+							bottom: Math.round(overBottom / scale),
+							right: Math.round(overRight / scale),
+						};
+					};
+
+					// The sweep drives `deck.slide()`, which fires `slidechanged`,
+					// which would otherwise log a warning per slide on top of the
+					// table the sweep is trying to print.
+					let sweeping = false;
+
+					const check = () => {
+						if (sweeping) return;
+						const slide = deck.getCurrentSlide() as HTMLElement | undefined;
+						if (!slide) return;
+
+						const { bottom, right } = measure(slide);
+						// A few px of slack absorbs subpixel rounding in the scale
+						// transform and the line boxes of inline elements, neither of
+						// which is visible on a projector.
+						if (bottom <= SLACK && right <= SLACK) {
+							badge.hidden = true;
+							return;
+						}
+
+						const parts = [];
+						if (bottom > SLACK) parts.push(`${bottom}px past the bottom`);
+						if (right > SLACK) parts.push(`${right}px past the right`);
+						badge.textContent = `Slide ${deck.getSlidePastCount() + 1} overflows: ${parts.join(", ")}`;
+						badge.hidden = false;
+
+						console.warn("[slides] overflow", { slide, bottom, right });
+					};
+
+					// Images and webfonts settle after the transition, so re-check
+					// once things have actually landed.
+					const checkSoon = () => {
+						check();
+						setTimeout(check, 350);
+					};
+
+					/**
+					 * Full-deck sweep. Checking the current slide only tells you
+					 * about the slide you happen to be on, which is exactly the
+					 * information you don't have while writing the other forty.
+					 * Press `C` to walk every slide and print one table.
+					 */
+					const sweep = async () => {
+						const start = deck.getIndices();
+						const rows = [];
+						sweeping = true;
+						badge.hidden = true;
+
+						for (const h of deck.getHorizontalSlides()) {
+							const hIndex = deck.getHorizontalSlides().indexOf(h);
+							const verticals = h.querySelectorAll("section").length;
+
+							for (let v = 0; v < Math.max(1, verticals); v++) {
+								deck.slide(hIndex, verticals ? v : undefined);
+								// Let layout and the transition settle before measuring.
+								await new Promise((r) => setTimeout(r, 120));
+
+								const slide = deck.getCurrentSlide() as HTMLElement | undefined;
+								if (!slide) continue;
+
+								const { bottom, right } = measure(slide);
+								if (bottom <= SLACK && right <= SLACK) continue;
+
+								rows.push({
+									slide: verticals ? `${hIndex + 1}.${v + 1}` : `${hIndex + 1}`,
+									bottom,
+									right,
+									heading: slide.querySelector("h1,h2,h3")?.textContent?.trim().slice(0, 50) ?? "",
+								});
+							}
+						}
+
+						deck.slide(start.h, start.v);
+						sweeping = false;
+
+						if (rows.length) {
+							console.warn(`[slides] ${rows.length} slide(s) overflow the canvas`);
+							console.table(rows);
+						} else {
+							console.info("[slides] every slide fits");
+						}
+					};
+
+					document.addEventListener("keydown", (e) => {
+						// Ignore the modified combos the browser and Reveal already own.
+						if (e.key !== "c" || e.metaKey || e.ctrlKey || e.altKey) return;
+						void sweep();
+					});
+
+					deck.on("ready", checkSoon);
+					deck.on("slidechanged", checkSoon);
+					deck.on("fragmentshown", check);
+					deck.on("fragmenthidden", check);
+					window.addEventListener("resize", checkSoon);
+				}
 			});
 		</script>
 	</body>

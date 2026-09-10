@@ -32,10 +32,10 @@ const hasContent = Astro.slots.has("default");
 ---
 
 <aside
-	class={`border-l-4 ${styles.border} ${styles.bg} py-4 px-5 rounded-lg my-4 flex flex-col gap-2`}
+	class={`border-l-4 ${styles.border} ${styles.bg} py-3 px-5 rounded-lg my-2 flex flex-col gap-1`}
 >
 	<div
-		class={`flex items-center gap-2 font-bold ${styles.text} capitalize ${hasContent ? "mb-2" : ""}`}
+		class={`flex items-center gap-2 font-bold ${styles.text} ${title ? "" : "capitalize"} ${hasContent ? "mb-1" : ""}`}
 	>
 		<span class="flex items-center [&>svg]:h-5 [&>svg]:w-5" set:html={icons[type]} />
 		<div>{displayTitle}</div>

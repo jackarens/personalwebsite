@@ -18,7 +18,9 @@ body {
 	font-family:
 		ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
 		monospace;
-	font-size: 32px;
+	/* Set per-deck by Presentation.astro; see its `baseFontSize` prop. Sized
+	   against the fixed 1280x720 canvas, not the viewport. */
+	font-size: var(--slide-base-font-size, 32px);
 	color: var(--color-global-text);
 	background-color: var(--color-global-bg);
 }
@@ -31,7 +33,7 @@ body {
 	display: flex !important;
 	flex-direction: column;
 	background-color: var(--color-global-bg);
-	padding: 60px 80px;
+	padding: 48px 64px;
 	top: 0 !important;
 	height: 100%;
 	box-sizing: border-box;
@@ -47,7 +49,7 @@ body {
 
 /* Vertical stack wrapper - no padding */
 .reveal .slides > section > section {
-	padding: 60px 80px;
+	padding: 48px 64px;
 }
 
 .reveal .slides > section:has(> section) {
@@ -71,7 +73,7 @@ body {
 .reveal h6 {
 	color: var(--color-accent);
 	font-weight: 600;
-	margin-bottom: 0.5em;
+	margin-bottom: 0.35em;
 	text-transform: none;
 	letter-spacing: normal;
 }
@@ -102,11 +104,11 @@ body {
 }
 
 .reveal h2 {
-	font-size: 2.2em;
+	font-size: 1.7em;
 }
 
 .reveal h3 {
-	font-size: 1.6em;
+	font-size: 1.25em;
 }
 
 .reveal .center-header h1,
@@ -141,14 +143,14 @@ body {
 
 .reveal pre {
 	box-shadow: none;
-	font-size: 0.55em;
 	width: 100%;
+	margin: 0.4em 0;
 }
 
 .reveal pre code {
 	display: block;
-	padding: 1em;
-	max-height: 500px;
+	padding: 0.6em 0.8em;
+	max-height: 440px;
 	overflow: auto;
 	border: 1px solid #666;
 	border-radius: 4px;
@@ -170,7 +172,15 @@ body {
 }
 
 .reveal li {
-	margin-bottom: 1em;
+	/* A full em between bullets costs ~40% of the canvas on a five-bullet slide
+	   once type is sized for a room. 0.6em still separates them clearly. */
+	margin-bottom: 0.6em;
+}
+
+/* Trailing margin on the last bullet is invisible and still overflows the
+   slide -- it is the difference between fitting and not on a full list. */
+.reveal li:last-child {
+	margin-bottom: 0;
 }
 
 /* Blockquotes */
@@ -196,13 +206,14 @@ body {
 
 /* Tables */
 .reveal table {
-	margin: 1em 0;
+	margin: 0.6em 0;
 	border-collapse: collapse;
+	font-size: 0.8em;
 }
 
 .reveal table th,
 .reveal table td {
-	padding: 0.5em 1em;
+	padding: 0.3em 0.7em;
 	border-bottom: 1px dashed #666;
 }
 
@@ -272,7 +283,7 @@ body {
 }
 
 .reveal section.section-header h2 {
-	font-size: 2.6em;
+	font-size: 2.4em;
 }
 
 /* Title slide - centered */
@@ -288,8 +299,11 @@ body {
 .reveal .two-column {
 	display: flex;
 	gap: 2em;
-	align-items: center;
-	margin-top: 1em;
+	/* Centering a column that is taller than the row makes it overflow the
+	   slide at BOTH ends, and the container's own box still reports as fitting.
+	   Top-aligning turns that silent failure into visible, measurable height. */
+	align-items: flex-start;
+	margin-top: 0.4em;
 	height: auto;
 	min-height: 0;
 }
@@ -297,6 +311,8 @@ body {
 .reveal .two-column div {
 	flex: 1;
 	margin: 0;
+	min-width: 0;
+	min-height: 0;
 }
 
 /* Stacked elements */
@@ -330,4 +346,141 @@ body {
 	display: flex;
 	max-height: 100%;
 	max-width: 100%;
+}
+
+/* Overflow guard badge (dev, or any build with `?check` in the URL).
+   Deliberately outside `.reveal` so it is never itself scaled. */
+.overflow-badge {
+	position: fixed;
+	left: 16px;
+	bottom: 16px;
+	z-index: 1000;
+	padding: 8px 14px;
+	border-radius: 4px;
+	background: #b91c1c;
+	color: #fff;
+	font-family:
+		ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+		monospace;
+	font-size: 14px;
+	pointer-events: none;
+}
+
+/* Keep imagery inside a column from dictating the column's height. */
+.reveal .two-column img,
+.reveal .two-column svg {
+	max-height: 400px;
+	object-fit: contain;
+}
+
+.reveal .slides section .portrait img {
+	max-height: 400px;
+	width: auto;
+	object-fit: contain;
+}
+
+/* Code blocks are rendered by astro-expressive-code, which sizes and pads
+   itself through its own custom properties -- plain `.reveal pre` rules do not
+   reach it. Scope the overrides to the deck so articles keep their own sizing. */
+.reveal .expressive-code {
+	--ec-codeFontSize: 26px;
+	tab-size: 2;
+	--ec-codeLineHt: 1.35;
+	--ec-codePadBlk: 0.6rem;
+	--ec-codePadInl: 0.9rem;
+	--ec-uiFontSize: 20px;
+	--ec-uiPadBlk: 0.2rem;
+}
+
+.reveal .expressive-code figure {
+	margin: 0.4em 0;
+}
+
+/* Body copy inside a split column wraps roughly twice as often as full-width
+   text, so a list that fits alone will not fit beside a second column. Treat
+   column lists as supporting detail and set them a notch smaller. */
+.reveal .two-column ul,
+.reveal .two-column ol {
+	font-size: 0.85em;
+}
+
+/* Slide titles are centred; body copy and column sub-heads stay left-aligned. */
+.reveal .slides section > h1,
+.reveal .slides section > h2,
+.reveal .slides section > h3 {
+	text-align: center;
+}
+
+/* Side-by-side code gets roughly half the width, so it needs its own size.
+   Comparison slides are denser by nature and get talked through. */
+.reveal .two-column .expressive-code {
+	--ec-codeFontSize: 21px;
+	--ec-codePadInl: 0.6rem;
+}
+
+/* The slide is a flex column, so its children shrink below their own content
+   by default. That produces overlapping blocks INSIDE the slide -- invisible
+   to a bounds check, because nothing crosses the slide edge. Refusing to
+   shrink turns those collisions back into ordinary overflow we can measure. */
+.reveal .slides section > * {
+	flex-shrink: 0;
+}
+
+/* Images are the exception: scaling one down to fit is exactly right, and is
+   what `object-fit: contain` is already set up to do. */
+.reveal .slides section > img,
+.reveal .slides section > figure,
+.reveal .slides section > .r-stack {
+	flex-shrink: 1;
+	min-height: 0;
+}
+
+/* Full-bleed image slides (conference sponsor boards, QR codes). The image IS
+   the slide, so the usual padding would letterbox it against the deck's own
+   background. `contain` keeps a 16:9 asset exactly full-screen and still fits
+   an off-ratio one without cropping. Mark the wrapper `data-bleed` in the
+   markup so the overflow check does not flag an image doing its job. */
+.reveal .slides section.full-bleed {
+	padding: 0;
+	align-items: center;
+	justify-content: center;
+}
+
+.reveal .slides section.full-bleed img {
+	width: 100%;
+	height: 100%;
+	max-width: none;
+	max-height: none;
+	object-fit: contain;
+}
+
+/* QR slides carry a title, so the code gets the remaining height rather than
+   the whole canvas. The white plate matters: the deck background is dark and a
+   scanner needs the quiet zone around the code to stay light. */
+.reveal .slides section.qr-slide .qr-plate {
+	flex: 1 1 0;
+	min-height: 0;
+	display: grid;
+	place-items: center;
+	align-self: center;
+	background: #fff;
+	border-radius: 12px;
+	padding: 20px;
+	margin: 0.4em 0;
+	aspect-ratio: 1;
+}
+
+.reveal .slides section.qr-slide .qr-plate img {
+	width: 100%;
+	height: 100%;
+	max-width: none;
+	max-height: none;
+	object-fit: contain;
+}
+
+/* Speaker role under the byline on the title slide. */
+.reveal section.title-slide .role {
+	font-size: 0.9em;
+	opacity: 0.6;
+	margin-top: 0.2em;
 }

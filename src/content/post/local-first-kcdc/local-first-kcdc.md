@@ -1,0 +1,682 @@
+---
+title: "Local-first Web Apps: The Code"
+description: "Building offline-capable web apps, with the Replicache configuration and mutator design spelled out."
+publishDate: "2026-09-08"
+tags:
+  ["software-architecture", "local-first", "web-development", "offline", "kcdc"]
+slidesUrl: "/slides/local-first-kcdc"
+draft: true
+pinned: false
+---
+
+## Why this Article
+
+Our journey to implementing a local-first web application at [Layer](https://layer.team) started as a way to resolve issues with having the data we wanted for clients readily accessible, and turned into a long, comprehensive architecture buildout with quite a few obstacles. I wrote up that journey once already. This version is the one I wanted to read while building it: less narrative, more of the actual [Replicache](https://replicache.dev) configuration, the mutator design, and the specific places where a reasonable-looking choice turned out to decide our conflict behavior for us. If you want the story-shaped version first, the [original write-up](/posts/local-first-nebraska-code/local-first-nebraska-code) is still there.
+
+## What is Local-first, Anyway?
+
+Before I get into the Layer-specific mess we found ourselves in, it's worth being precise about what "local-first" actually means, since the term gets thrown around pretty loosely. Most web apps are what I'd call cloud-first: every read and write round-trips to a server, so offline means broken and a bad network means a bad app. Local-first flips that - your device keeps a full working copy of the data, reads and writes hit that copy first, and syncing to a server happens in the background, off the critical path of anything the user is trying to do. (The server still holds the authoritative copy - more on that later.)
+
+The term comes from a 2019 essay by Martin Kleppmann and a few co-authors at Ink & Switch, ["Local-first software: you own your data, in spite of the cloud"](https://www.inkandswitch.com/local-first/), which lays out seven "ideals" for this kind of software. I won't rehash all seven, but the ones that mattered most to us were: it should be fast (no spinners for data you already have), it should work fully offline (not a degraded mode), it should follow you across devices, and it should let multiple people work on the same data at the same time.
+
+It helps to think of this as a spectrum rather than a binary:
+
+| Style                 | Writes Land First On   |   Offline    | Example              |
+| --------------------- | ---------------------- | :----------: | -------------------- |
+| Traditional CRUD      | Server                 |      ❌      | Most CRUD SaaS       |
+| Offline-first (cache) | Server (queued if not) |   Partial    | Many mobile apps     |
+| **Local-first**       | **Client**             |      ✅      | Linear, Figma, Layer |
+| Local-only            | Client only            | ✅ (no sync) | Obsidian vaults      |
+
+Layer landed solidly in the local-first column, for reasons that'll make a lot more sense once you see the problem we were actually trying to solve.
+
+## Introduction
+
+I learned the hard way that "just load it when the user asks" is a trap. People expect the data to be there already. Consider the two categories: `issues` and `users` (think separate tabs in an Excel document). Every issue has one or more assignees, alongside data like a description, cost to resolve, or photos. Every user carries data like home base, specialty, and contact info. When viewing issues in a table, users reasonably expect to see the assignee's basics inline. On the users page, they expect a sense of which kinds of issues that person usually owns, and maybe some high level aggregations, like average cost to resolve or when any issue was last updated. For a small project or domain, this is trivial. At scale, with tens of thousands of issues and hundreds of users, it becomes punishing.
+
+For example, to render the following table of issues where each row represents an individual issue and each column represents pieces of data about that issue, we have to have the full representation of each issue. Because the assigned user is present on the issue data, we can display it without any problems.
+
+![Issues table example](./issues-table.png)
+_Issues table example_
+
+However, if we want to show any additional information about the users that have been assigned to that issue, we need to have the full set of data for each associated user.
+
+For a long time, our solution at Layer was to limit the data shown in high level views (like tables), loading richer related data only when users clicked through to a specific entry (row). This kept bandwidth in check, but at the cost of users not having all the data they expected, when they expected it. It also meant that we were loading similar or overlapping sets of data repeatedly. As users navigated our app, they might load the same user data multiple times, once per issue they clicked into. This led to a lot of redundant network requests and slower perceived performance.
+
+The trouble showed up when relationships became more complex. To support high level (table) views, we propagated easy fields (names, IDs), but this wasn't feasible for all the data users could possibly want. This also introduced issues with drift: the presence of stale data because a propagation operation had failed. At project scale, neither direction was cheap (or reasonable).
+
+In addition to these concerns about data availability within complex setups, our users wanted some sort of reliable offline experience. In many of these use cases, limitations with loading data from our servers were reasonable(ish), but users couldn't understand why the data they were entering into the app locally couldn't perform as expected. Our Firestore integration provided some offline capabilities, but it was clear that we needed a more robust solution to meet our users' needs.
+
+## Solutions Considered
+
+| Approach          | Offline Support | Complexity |    Data Freshness     | Performance at Scale |
+| ----------------- | :-------------: | :--------: | :-------------------: | :------------------: |
+| Direct DB Calls   |       ❌        |    Low     |     Always fresh      |         Poor         |
+| Propagation       |       ❌        |   Medium   |    Prone to drift     |         Poor         |
+| On-Demand Loading |       ❌        |    High    |     Always fresh      |       Variable       |
+| Local-first       |       ✅        |   Medium   | Eventually consistent |      Excellent       |
+
+### **Propagation**
+
+As mentioned, propagation was our first approach, and it worked (ish) until users actually wanted to use the data. Every attempt we made to patch over limitations just resulted in jank(ier) code and mounting tech debt. Full scale propagation of all desired data was too expensive and immediately invoked searches for generic diagrams of exponential growth to share with "management".
+
+### **On-Demand Loading**
+
+We considered an "on-demand" loading approach in which we build out an endpoint that would load all the data for the given page in one request. For example, when a user navigates to the issues table, we would make a single request that returns all the issues along with the relevant user data for each issue.
+
+![XKCD 378 - Real Programmers](./xkcd-378.png)
+_XKCD 378 - Real Programmers_
+
+This is generally where the "Firestore/NoSQL/backend-less apps aren't for production applications" crowd gets really excited. "If you would've just invested in a REAL database and .NET backend with a traditional ORM like a real company, you wouldn't have this problem!" Unfortunately (for them), this approach still has limitations, especially as the amount of data grows, resulting in complex and likely bug-prone reducers. Most importantly for us, it doesn't allow for offline functionality at all and would still result in much of a user's data being loaded multiple times as they navigate the app. Oldest isn't always best - I'll leave it at that.
+
+:::warning
+On-demand loading creates complex reducers that are prone to bugs and offers zero offline capability. For data-heavy applications, this approach doesn't scale.
+:::
+
+### **Local-first**
+
+![Local Data](./local-files.jpg)
+_I just want my data on my computer, not the cloud_
+
+Occam's Razor: What if all the data was just always loaded? No more on demand network requests at all! We generally knew that the majority of our users were working with somewhere around 1,000 to 10,000 entries (issues, users, etc) in a given project, which meant that loading all the data into the client upfront was feasible and wouldn't require any more time or network bandwidth than loading our application itself. For larger projects, a slower initial load time is a reasonable tradeoff for the improved performance and offline capabilities that come with having all the data available locally.
+
+:::tip
+For most projects with 1,000-10,000 entries, the entire dataset can be loaded upfront with negligible impact on initial load time.
+:::
+
+Obviously, we can't load all the data each time the app loads. We'd need to account for changes to the data on other clients or the server to ensure users don't "lose" or overwrite each other's work. This was pretty clearly the setup to a problem solved by a syncing "engine", in which the client maintains a local copy of the data and synchronizes with the server in the background to stay up to date.
+
+## Why Local-first Became the Answer
+
+A few things had us well positioned to implement a local-first architecture. First, our application is naturally divided into small(er) batches of data (projects), in which users would perform large amounts, if not all of their work for a given session. This meant loading or initialization time was a penalty paid a few times per session, if not just a single time, rather than frequently as users navigated around the app. Second, our users were already accustomed to working in rather heavy and data intensive applications (like Revit), so they were more tolerant of a longer initial load time in exchange for a more responsive and reliable experience once the data was loaded. Being able to provide the full suite of (or at least getting closer to) the types of powerful tools our users had been requesting was considered a reasonable tradeoff for occasional initialization times. Finally, offline functionality was a must-have for our users, and a local-first architecture was the only way to achieve that in a way that met their expectations.
+
+Additional capabilities would also come out of our local-first architecture beyond the initial motivation of data availability and offline functionality. For example, we would be able to implement more powerful filtering and sorting capabilities that could be performed locally without the need for additional network requests. In turn this has led to an opportunity to share filter/sort logic between the front-end and back-end, as we can use the same JavaScript filter engine on both sides to ensure consistency in how data is filtered and sorted regardless of whether the user is online or offline.
+
+## The Local-first Landscape
+
+Before I get into the specific tools we picked, it's worth pointing out that we're not exactly trailblazers here. There are broadly two ways people build this stuff:
+
+**CRDT-based** (Automerge, Yjs) - conflict resolution is handled by math. There's no central authority; every replica can merge independently and mathematically converge on the same state. Great fit for peer-to-peer setups and collaborative text editing.
+
+**Sync-engine / client-authoritative** (Replicache, Zero, ElectricSQL, PowerSync) - the server stays the source of truth, and the client is a smart cache that queues up mutations and reconciles via versioning rather than merge functions. This is the camp Layer falls into.
+
+And Layer is far from the only one doing this. Linear built their own sync engine and wrote [one of the best public deep-dives](https://linear.app/now/scaling-the-linear-sync-engine) on the pattern - genuinely, go read it before you build your own, I wish it had existed when we started. Figma's multiplayer engine keeps every cursor and shape in sync locally. Obsidian just keeps your vault on disk and treats sync as optional. Actual Budget does CRDT-based sync and is open source if you want to poke around a real implementation.
+
+### Providers
+
+We explored a handful of providers during our research into local-first architectures, including Firestore's offline capabilities, Replicache, and RxDB. Our primary concerns were speed, reliability, and ease of integration. We ultimately chose Replicache for its maturity and control over the implementation. It was later open-sourced, which gave us confidence in its long-term viability. As mentioned, we had already been using Firestore for our primary data storage, but its offline capabilities were insufficient for our needs, particularly in terms of control over storage duration and scope; in terms of control over storage duration and scope, it had none. RxDB had some promising features and excellent marketing, but much of it was locked behind a rather sketchy paywall and seemed overall less mature.
+
+| Approach                    | Offline | Control | NoSQL Support | Maturity |
+| --------------------------- | :-----: | :-----: | :-----------: | :------: |
+| Build from scratch          |   ✅    |  Full   |      ✅       |   N/A    |
+| Firebase Offline            |   ⚠️    | Limited |      ✅       |   High   |
+| **Replicache**              |   ✅    |  High   |      ✅       |   High   |
+| Zero (Replicache successor) |   ⚠️    |  High   |      ❌       |  Medium  |
+
+Zero, Replicache's successor, targets SQL databases and has reduced offline capabilities compared to Replicache, plus it was released after we had already started our implementation, but it's worth watching as it may be a good fit for other applications that don't require the same level of offline functionality or that are already using a relational database.
+
+::github{repo="rocicorp/replicache"}
+
+**Key features of Replicache include:**
+
+- Flexible implementation: Replicache provides a client library that handles the local data storage read/write and synchronization calls, but the push/pull endpoints are defined by the implementers, giving us the flexibility to tailor the behavior to our specific needs. The server library is limited to types and interfaces that ensure compatibility with the client, but otherwise doesn't impose any constraints on how we implement the server-side logic.
+- IndexedDB storage: Replicache uses IndexedDB for local storage, which is a widely supported and performant option for storing large amounts of data in the browser. This was important for us given the amount of data we needed to store locally and our need for cross-platform support (web and Capacitor iOS). We also wanted battle-tested storage[^1]. Origin Private File System API implementations were a bit too new for our tastes, and we wanted to avoid the risk of running into issues with browser support or performance.
+- Observability: Replicache provides "hooks" that allow us to easily observe changes to the local data and update our UI accordingly. This was important for ensuring a responsive and seamless user experience as data is synchronized in the background.
+- Designed for NoSQL: Replicache is designed to work with NoSQL data models, which was a good fit for our existing Firestore data structure. This allowed us to avoid the need for complex transformations or migrations of our data to fit a different model. Replicache's successor, Zero, is designed for more traditional relational data models (SQL), though less offline capable.
+
+[^1]: We actually found out that the storage layer is customizable — Replicache provides an IndexedDB wrapper, but it could be swapped for another key/value storage solution if needed.
+
+## Technical Implementation
+
+The technical implementation of our local-first architecture involved several key components, including the design of our push/pull endpoints, the implementation of a client service that wraps around Replicache, and (later) the development of a filter/sort engine that can be used both on the front-end and back-end.
+
+### Per-Space Versioning
+
+Replicache requires that you pick from one of their versioning strategies to ensure that all changes are properly versioned and that conflicts can be resolved. We chose to implement per-space versioning, which means that each project (or "space") in our application has its own version number that is incremented with each change. This allows us to track changes at the project level and ensures that we can properly synchronize changes across clients without conflicts.
+
+![Database Structure](./database-structure.png)
+_Database Structure_
+
+:::important
+For Layer, this means storing a version number on the project and each element document in Firestore. The overall project version (`rcVersion`) is incremented with each change to the project or any of its elements, while each element document has its own version number (`rcVersion`) that is incremented with each change to that specific element.
+:::
+
+Bulk updates to the project (e.g. a change that affects multiple elements) are handled by incrementing the project version and updating the version numbers of all affected elements in a single transaction. This ensures that all changes are properly versioned and that clients can synchronize changes without conflicts.
+
+#### Conflict Resolution
+
+The question everyone asks: what happens when two people edit the same thing at once? Our answer is last write wins - with receipts. When two clients touch the same field, the later push takes it. That sounds cavalier until you add the second half: every change is logged, so each element carries its full history, and users can roll back any change they don't like. In practice, construction data rarely collides on the exact same field, and when it does, "put it back how it was" is what users actually want - an undo beats a merge dialog. The same log doubles as change tracking (who changed what, when), which turned out to be a feature users wanted anyway.
+
+### Overview
+
+#### High-level Architecture
+
+![High-level architecture diagram](./architecture-diagram.png)
+_High-level Architecture_
+
+1. **Client**: Web/iOS app. All interactions go through the Replicache client service, which provides a simple API for reading/writing data and handles synchronization with the server in the background.
+   - Firestore allows for easy watching of data changes, so listening to the primary database for changes and triggering background syncs is straightforward.
+2. **Primary Database**: Firestore. Standard NoSQL database that serves as the source of truth for all data.
+   :::caution
+   **Nothing** gets written to Firestore without going through the transaction and versioning system. This is critical for maintaining data integrity across all clients.
+   :::
+3. **Push Endpoint**: Receives updates from the client and applies them to the primary database. This is where we handle conflict resolution and ensure that all changes are properly versioned. Also performs authentication checks. Along with `pull`, this is called by the client in the background.
+4. **Pull Endpoint**: Provides the client with the latest data from the primary database. This is where we handle any necessary transformations or filtering of the data before it is sent to the client. Fresh clients need a full dump of the data, while clients that have been offline for a while or are currently online can receive a more incremental update. Along with `push`, this is called by the client in the background.
+5. **External Sources**: Other data manipulation sources (Cloud Functions, API endpoints, etc) that can also write to the primary database. These changes will be picked up by the pull endpoint and synchronized to the clients in the background.
+
+#### Push & Pull Endpoint Implementation
+
+The push and pull endpoints are the heart of the sync system. Here's a simplified view of how they work:
+
+```ts
+// Pull Endpoint - Server sends changes to client
+function pull(cookie) {
+	// Get all changes since client's last sync point
+	const changes = getChangesSince(cookie);
+
+	// Build patches from the changes
+	const patches = buildPatches(changes);
+
+	// Return patches and new sync point
+	const newCookie = getCurrentVersionCookie();
+	return { patches, cookie: newCookie };
+}
+```
+
+```ts
+// Push Endpoint - Client sends changes to server
+function push(clientId, mutations) {
+	for (const mutation of mutations) {
+		// Skip if already processed (idempotency)
+		if (alreadyProcessed(clientId, mutation.id)) {
+			continue;
+		}
+
+		// Check permissions
+		if (!hasPermission(clientId, mutation)) {
+			continue;
+		}
+
+		// Apply mutation to server state
+		applyMutation(mutation);
+		recordMutationProcessed(clientId, mutation.id);
+	}
+
+	return { success: true };
+}
+```
+
+The key insight here is that the push endpoint must be **idempotent**—if a client retries a mutation that was already processed, the server should recognize it and skip it. This is critical for handling network failures gracefully.
+
+### Configuring Replicache
+
+Replicache's constructor fits on one screen, which makes it easy to skim. I'd slow down here. A handful of these options decide how your app behaves under load, and a couple of the defaults are wrong for anything data-heavy.
+
+Here's ours, trimmed to the parts worth talking about:
+
+```ts
+const rep = new Replicache({
+	// The cache identity. Two users on one browser must not share a cache,
+	// so the name is scoped to both the project and the user.
+	name: `${projectId}-${userId}`,
+
+	pushURL: `${pushEndpoint}?projectId=${projectId}`,
+	auth: `Bearer ${userToken.token}`,
+
+	indexes: {
+		categories: {
+			jsonPointer: "/_indexes/category",
+		},
+	},
+
+	mutators,
+
+	// Default is 60s. We already watch the project document for an rcVersion
+	// change, so polling is pure waste - pull only when there's something to pull.
+	pullInterval: null,
+
+	// Mutations made within a second of each other batch into one push.
+	pushDelay: 1000,
+	requestOptions: { minDelayMs: 0 },
+
+	// Lets push/pull support two mutation schemas during a rollout.
+	schemaVersion: "2",
+});
+```
+
+A few of these deserve more than a line.
+
+**`name`.** It selects the IndexedDB database, which makes it the cache boundary. Scoping it to the user as well as the project is what stops two people sharing a job-site laptop from reading each other's data. Public, unauthenticated users are the one case where sharing is fine, because they can't push anything anyway.
+
+**`kvStore`.** We use the default (`"idb"`), but the option also takes `"mem"` or a custom implementation:
+
+```ts
+kvStore: "idb",   // default; persists across reloads
+kvStore: "mem",   // in-memory; gone on refresh - the right call in tests
+kvStore: { create: (name) => new MyStore(name), drop: (name) => ... },
+```
+
+We've never shipped a custom store. I'm mentioning it anyway because it's the hook for SQLite, OPFS, or a native shell, and knowing it exists changes how boxed-in you feel if you ever need to leave the browser.
+
+**`pullInterval: null` cut the most traffic.** The default polls every sixty seconds, per client. We already had a realtime listener on the project document, so every one of those requests was asking a question we could answer locally for free. Setting it to `null` means we pull when a version changes and not otherwise.
+
+**`pushDelay` batches writes.** Typing in a cell fires a mutation per keystroke. Collecting a second's worth into one push costs the user nothing, because the local write already happened and they're looking at the result either way.
+
+**`schemaVersion` and `onUpdateNeeded`.** The version rides along on every push and pull, so the server can spot an old client and reject it. Wire the callback up on day one, well before you need it:
+
+```ts
+rep.onUpdateNeeded = async (reason) => {
+	showBlockingUpdateDialog();
+	await rep.close();
+};
+```
+
+**`getAuth` matters as much as `auth`.** The constructor takes an initial token, but a tab left open on a job site outlives it. `getAuth` is called when the server answers 401, so you can refresh in place instead of forcing a reload:
+
+```ts
+rep.getAuth = async () => `Bearer ${(await auth.getIdToken()).token}`;
+```
+
+Without it, sync dies silently and the app keeps feeling fine - the local cache is still there - right up until someone notices their changes never landed.
+
+**`puller` and `pusher` let you swap the transport while keeping the engine.** Retries, logging, and any custom routing live here. We ended up leaning on this more than we expected - there's an example further down, once the problem it solves has come up.
+
+### Asking the Browser to Keep Your Data
+
+This isn't a constructor option, but it belongs in the same conversation:
+
+```ts
+navigator.storage.persist().then((persisted) => {
+	console.log(persisted ? "Storage will be persisted" : "Storage is evictable");
+});
+```
+
+Without requesting persistence, the browser is free to evict the whole cache under storage pressure. It's recoverable - a re-pull rebuilds everything - but "recoverable" here means a user watching a progress bar instead of working.
+
+The thing that surprised me is how differently browsers answer that request:
+
+| Browser       | Prompts the user? | How it decides         |
+| ------------- | ----------------- | ---------------------- |
+| Firefox       | Yes               | Whatever the user says |
+| Chrome / Edge | Never             | Engagement heuristics  |
+| Safari 17+    | Never             | Engagement heuristics  |
+
+So the same call gets you a permission dialog in one browser and a silent yes-or-no in the others. You can't rely on it returning `true`, which means the honest approach is to request persistence and then design as though you didn't get it.
+
+Safari is the one worth planning around, and not because of quota - it grants an origin roughly 60% of disk, same ballpark as Chrome. The problem is eviction. With tracking prevention on, script-writable storage (IndexedDB included) gets cleared after seven days without user interaction. That's seven days of _browser use_ rather than seven calendar days, so a user who takes a two-week vacation hasn't necessarily lost anything. Web apps added to the Home Screen keep their own interaction counter and escape the sweep.
+
+:::note
+Whether `persist()` protects you from that seven-day sweep is genuinely unclear. MDN says the eviction applies regardless of persistence; WebKit's own documentation doesn't confirm that either way, and developers report that persistence does seem to protect the data. I wouldn't bet a bootstrap flow on it.
+:::
+
+### Mutators
+
+Mutators took more of our design time than anything else in this project, and I don't think that's unusual.
+
+A mutator is a named function that describes a write. It runs **twice**: once locally, immediately, so the UI updates without waiting for anything, and once on the server, where the result gets versioned and becomes real. The client shows its own version until the server's lands.
+
+It also runs more than twice. From our own source:
+
+> It's very important to note that these mutators can be called by Replicache multiple times, even if we only call them once.
+
+Pending mutations replay after every pull, until the server confirms them. That has a hard consequence: **mutators must be deterministic.** No `Date.now()`, no `Math.random()`, no network calls. Anything non-deterministic gets passed in as an argument by the caller, so the replay produces the same result as the original.
+
+#### Our first version
+
+The first version anyone writes looks like this:
+
+```ts
+updateElement: async (tx, { elementId, elementData }) => {
+	return tx.set(`projects/${projectId}/elements/${elementId}`, elementData);
+},
+```
+
+This clobbers every field you didn't send. `tx.set` replaces the entire value - there is no partial write - and the transaction API has no dot-notation for reaching a nested key. Concretely: Ana saves a due date, Ben saves a cost on the same element, and Ben's write erases Ana's.
+
+#### What we do instead
+
+What we do instead, with the comment that's been sitting in our source since we figured it out:
+
+```ts
+updateElement: async (tx, args) => {
+	const element = await tx.get(`projects/${projectId}/elements/${args.elementId}`);
+
+	// Replicache set() does not support partial updates nor does it support dot
+	// notation to update nested fields. In order to support both these situations,
+	// we use the lodash set() function to set nested properties on the element
+	// object retrieved from Replicache.
+	const update = cloneDeep(element);
+	Object.entries(args.elementData).forEach(([key, value]) => {
+		set(update, key, value); // key looks like "fields.abc123.value"
+	});
+
+	return tx.set(`projects/${projectId}/elements/${args.elementId}`, update);
+},
+```
+
+The lodash call isn't the interesting part. What matters is what the UI sends: **a path to the leaf that changed**, rather than a copy of the document.
+
+```ts
+rep.mutate.updateElementField({
+	elementId: "el_9f2",
+	fieldId: "due_date",
+	fieldValue: { value: "2026-06-18", type: "date" },
+});
+```
+
+`updateElementField` sets `fields.${fieldId}` and touches nothing else. We have parallel mutators with the same shape for references (`references.${referenceId}`) and for property deletion.
+
+#### The server half
+
+On the client, field-level updates are simulated - we rebuild the whole object and write it back. On the server, Firestore does them natively, inside a transaction, because its `update()` treats dotted keys as field paths:
+
+```ts
+for (const { elementData, id } of elements) {
+	t.update(db.doc(`projects/${projectId}/elements/${id}`), {
+		...elementData, // keys are dotted field paths
+		...elementUpdateMetadata,
+		rcVersion: nextVersion,
+	});
+}
+
+// Bump the space version in the same transaction.
+t.update(db.doc(`/projects/${projectId}`), { rcVersion: nextVersion });
+```
+
+The client rebuilds the object; Firestore just writes the path. Two mechanisms, same behavior - and the server's is the one that decides correctness, since it's the write that survives.
+
+#### What actually collides
+
+| Scenario                                             | Outcome                                                 |
+| ---------------------------------------------------- | ------------------------------------------------------- |
+| Ana edits `fields.due_date`, Ben edits `fields.cost` | No conflict. Both writes land. Nobody loses anything.   |
+| Ana and Ben both edit `fields.cost`                  | Conflict. Later push wins. Earlier value is in the log. |
+
+:::important
+A conflict is whatever your mutator writes over. Ours write a single field, so the only way to collide is to touch the same field - which is why two people working the same row is a non-event for us. Write whole elements instead and both rows in that table become conflicts, no matter how clever the server gets afterward.
+:::
+
+#### Deletion needs its own mutator
+
+Removing a key isn't "set it to `undefined`" - JSON has no `undefined`, and the server needs an explicit `FieldValue.delete()`. So it gets a dedicated mutator that unsets the path:
+
+```ts
+deleteElementProperty: async (tx, args) => {
+	const update = cloneDeep(await tx.get(key(args.elementId)));
+	Object.entries(args.elementData || {}).forEach(([k, v]) => set(update, k, v));
+	unset(update, args.propertyKey);
+	return tx.set(key(args.elementId), update);
+},
+```
+
+Deleting an _element_, meanwhile, doesn't delete anything - `deleteElement` sets `status: "archived"`. Rollback needs the row to still exist.
+
+#### Handling replays on the server
+
+Because mutators replay, the push endpoint has to assume it will see the same mutation more than once. Replicache gives you monotonic per-client mutation IDs, which makes this cheap:
+
+```ts
+function push(clientId, mutations) {
+	for (const mutation of mutations) {
+		// Replays are normal, not exceptional.
+		if (mutation.id <= lastMutationID(clientId)) continue;
+		if (!hasPermission(clientId, mutation)) continue;
+
+		applyMutation(mutation);
+		recordMutationProcessed(clientId, mutation.id);
+	}
+}
+```
+
+Note where the permission check lives. It's on the server, because the client mutator runs on a machine you don't control.
+
+### Reads Off the Main Thread
+
+A late addition: we run a _second_ Replicache instance inside a Web Worker, pointed at the same cache, for reads only.
+
+```ts
+new Replicache({
+	name: `${projectId}-${userId}`, // same cache as the main thread
+	mutators: {}, // reads only - this instance never writes
+	indexes: { categories: { jsonPointer: "/_indexes/category" } },
+	pullInterval: null,
+	schemaVersion: "2",
+});
+```
+
+Large scans on a 40k-element project were janking the UI, and moving them off the main thread fixed it. The empty mutator map is deliberate - it keeps the question of which instance owns writes from ever coming up. If the worker fails to start, we fall back to reading on the main thread.
+
+## Tradeoffs: When _Not_ to Reach for This
+
+I don't want to make this sound like a free lunch, because it wasn't. Local-first is a bad fit if any of these are true for you:
+
+- Your data needs server-enforced authorization on _every_ read (local-first inherently means the client is holding data it might not always have the latest permission check against)
+- Your dataset can't reasonably fit on a client device
+- You need heavy real-time collaborative editing—at that point, reach for an actual CRDT library instead of rolling your own conflict resolution
+- You're a small team without the bandwidth to own the extra client and infrastructure complexity this introduces
+
+:::warning
+Local-first doesn't remove complexity, it just moves it. You're trading server complexity for client complexity, and now your users' laptops are paying part of the bill.
+:::
+
+## Challenges
+
+It didn't take long to run into a few challenges with our implementation. In general, things worked as expected, but once projects got larger, we started to see some performance issues with the initial load time as well as some edge cases with our synchronization logic. The following are a few of our bigger challenges and how we addressed them.
+
+### **Bootstrapping Large Clients**
+
+It didn't take testing very long to see that our very largest projects (~0.27% of our projects contained over 40,000 elements) were taking a very long time to load initially. This represented somewhere around 100 MB of data on average. To keep from running into data limits or streaming issues with a single call, the `pull` endpoint was configured by default to page data in batch of 1,000 documents (later increased to 10,000), which meant that clients were waiting for multiple round trips to get all the data they needed.
+
+Two things stood out as we began to diagnose this issue and look for solutions. First, the `pull` endpoint was spending quite a bit of time serializing the data to send to the client, which was adding to the overall load time. Second, and more critically, we realized that the client would always call `pull` one final time after the initial batch(es) of `pull` to confirm that the version of data it had received in the inital pages was up to date. This last "extraneous" call to `pull` was an indicator that the actual version of the initial batch(es) of data being up to date was not critical. This meant that we could potentially send a slightly stale version of the data in the initial batch(es) to speed up the load time, as long as we ensured that the final call to `pull` would provide the latest data.
+
+:::tip[Key Insight]
+The power behind a sync engine is the ability to operate asynchronously. You can send somewhat stale data initially and rely on the final pull to catch up.
+:::
+
+This led us to a solution: we could pre-serialize the data for each project and store it in a cache. Then when a client requests data for a project, we can send the pre-serialized data to the client right away. We can then rely on the final call to `pull` to ensure that the client gets up to date. This was inspired in part by Firestore's [bundle builder](https://firebase.google.com/docs/extensions/official/firestore-bundle-builder) extension, which helps reduce database querying costs for apps with millions of users that are constantly loading the same sets of data.
+
+By building a "bundle" for each project that contained the pre-serialized data for a given version and storing it in a storage bucket, we could have the client fetch the zipped bundle file directly from the storage bucket for the initial load. Sure, it was likely to end up out of date fairly quickly, but it was helpful in ensuring that a quick bootstrap could be completed with 70% - 90% of the data that was needed, with a quick background sync to grab the very latest changes.
+
+This is what the custom `puller` from earlier was for. Replicache has no concept of a bundle, and it doesn't need one: the puller spots the bundle URL in the pull response, downloads and applies it, then hands control back. The engine only ever sees patches arriving.
+
+#### Bundle Loading Implementation
+
+Here's how the bundle loading works on both client and server:
+
+```ts
+// Client Side - Pull with bundle support
+function pull() {
+	const lastCookie = getStoredCookie();
+	const response = await fetch("/api/pull", {
+		method: "POST",
+		body: JSON.stringify({ cookie: lastCookie }),
+	});
+
+	if (response.hasBundleUrl) {
+		// Bundle exists in storage - load full snapshot
+		const bundleData = await downloadFromStorage(response.bundleUrl);
+		applyPatches(bundleData.patches);
+		storeCookie(bundleData.cookie);
+
+		// Pull again for changes since bundle was created
+		return pull();
+	} else {
+		// No bundle - apply incremental patches
+		applyPatches(response.patches);
+		storeCookie(response.cookie);
+	}
+}
+```
+
+```ts
+// Server Side - Decide whether to serve bundle or patches
+function handlePull(cookie) {
+	const changesSinceCookie = getChangesSince(cookie);
+
+	if (cookie.fromVersion === 0) {
+		// Fresh client - serve a pre-built bundle instead
+		const bundleUrl = getLatestBundleUrl();
+		return { bundleUrl, cookie: bundleCookie };
+	} else {
+		// Existing client - return incremental patches
+		const patches = buildPatches(changesSinceCookie);
+		return { patches, cookie: currentCookie };
+	}
+}
+```
+
+This approach is particularly helpful for projects that start out huge—new team members joining a large project can bootstrap quickly without waiting for thousands of individual pull operations.
+
+### **Searching/Sorting/Filtering Read-in Time**
+
+In order to support custom relationships between Layer categories (e.g. issues, users, etc) - think tabs in Excel - we had built out a very thorough and rather complex set of filtering capabilities in JS that could be used on the front-end and backend to filter groups of elements.[^2] This filter structure was extensible, already had migrations from our old filtering structure, and was built to provide feature parity (and more!) compared to our existing filtering capabilities with ElasticSearch. However, it was built with the assumption that the data would be loaded and available synchronously, which meant that we were running into performance issues when trying to load all that data we had so nicely cached and stored in the user's IndexedDB into memory. Filtering and searching ended up being easier to solve, after all, you can always filter on smaller subsets of data and return those to the user once you have "enough", but sorting was a bit more of a challenge. To filter **and** sort, you need to have all the data loaded and available in memory.
+
+[^2]: I hope to complete an article similar to this one on our filter engine. Stay tuned!
+
+After a bit of research, we came across LokiDB, an in-memory JavaScript database that provides indexing and querying capabilities. By loading index data into LokiDB, we were able to take advantage of its in-memory indexing capabilities to quickly filter and sort the data as needed, even with larger datasets.
+
+::github{repo="LokiJS-Forge/LokiDB"}
+
+To illustrate the difference between our full data model and what we actually index, here's a comparison:
+
+```ts
+// Full LayerElement - everything stored in Replicache/Firestore
+export interface LayerElement {
+	autoGenerateName?: LayerAutoGenerateNameOptions;
+	autoIncrementId?: number;
+	category: ContextItem<R>;
+	completed: boolean;
+	createdAt: number | T;
+	createdBy: R | string;
+	createdByRef: { email: string; id: string; name: string };
+	createdPhaseId?: string;
+	deletedAt?: number | T;
+	family: string;
+	fields: Record<string, any | LayerElementField<T, R>>;
+	id?: string;
+	modelRevitId: string;
+	name: string;
+	params: Record<string, LayerRevitParameterValue<T, R>>;
+	rcVersion?: number;
+	references?: { [key: string]: LayerReference<T, R> };
+	revitExternalId?: string;
+	revitId: null | string;
+	revitKind?: "Forge" | "Instance" | "Type";
+	searchableIndex: string[];
+	skipInitialization?: boolean;
+	spatialRelationships?: LayerForgeInstanceElement["spatialRelationships"];
+	starred: boolean;
+	status: "active" | "archived";
+	templateName?: string;
+	type?: string;
+	typeId?: string;
+	updatedAt: T;
+	updatedBy: R;
+	updatedByRef: { email: string; id: string; name: string };
+	versionHistory?: LayerForgeInstanceElement["versionHistory"];
+	viewables?: LayerForgeViewable[];
+}
+```
+
+```ts
+// LokiDBElement - pared down for filtering/sorting only
+export interface LokiDBElement {
+	_sortName: string;
+	/**
+	 * Dynamic fields stored as key-value pairs
+	 * Keys represent field IDs, Revit parameter IDs, or spatial relationship IDs
+	 */
+	[id: string]: unknown;
+	autoIncrementId: null | number;
+	categoryId: string;
+	completed: boolean;
+	createdAt: number;
+	createdBy: string;
+	createdPhaseId?: string;
+	id: string;
+	modelRevitId?: string;
+	name: string;
+	references: string[];
+	spatialRelationships: string[];
+	starred: boolean;
+	status: string;
+	type?: string;
+	updatedAt: number;
+	updatedBy: string;
+}
+```
+
+The `LokiDBElement` is roughly 60-70% smaller than the full `LayerElement`, which makes a significant difference when loading tens of thousands of elements into memory.
+
+![LokiDB query example](./loki-query.png)
+_LokiDB query performance compared to naive filtering_
+
+We didn't need to use LokiDB for all of our data, just the data that was relevant for filtering and sorting. The data in Replicache (IndexDB) was everything, guaranteed to be up to date with the current sync and complete - no missing attributes. That data was pared down as much as possible to just the attributes we needed for filtering and sorting, and then loaded into LokiDB for quick querying. "Watching" Replicache for changes to entries within certain categories (e.g. issues, users) allowed us to know when to re-query for a given filter configuration, providing a "live-updating" feel to our data.
+
+### **Simultaneous Bulk Server Updates**
+
+One challenge that emerged as we scaled was **update contention**—when backend processes (Cloud Functions, API endpoints, batch jobs) attempt to update the same project simultaneously. On the client side, this isn't an issue: local changes don't have contention, as the sync engine handles retries gracefully with long-lived sessions. But server-side bulk operations are different.
+
+:::warning
+Firestore transactions have a maximum duration and will fail if contention is too high. A batch job updating elements while another process updates the same project's elements will cause failures, and Firestore transactions have a limited retry ability before they give up.
+:::
+
+**The Problem:**
+
+- Backend bulk updates can fail due to Firestore transaction contention
+- Unlike clients, server processes don't have long-lived sessions to retry
+- Failed updates could leave data in an inconsistent state
+
+#### Our Solution: Queue + Retry
+
+We implemented a cloud queue system for handling bulk server updates:
+
+```ts
+// Instead of direct bulk updates, enqueue the operation
+async function bulkUpdateElements(projectId: string, updates: ElementUpdate[]) {
+	// Add to cloud queue instead of direct write
+	await queue.enqueue({
+		projectId,
+		updates,
+		retryCount: 0,
+		maxRetries: 5,
+	});
+}
+
+// Queue processor with exponential backoff
+async function processQueueItem(item: QueueItem) {
+	try {
+		await applyUpdatesInTransaction(item.projectId, item.updates);
+	} catch (error) {
+		if (isContentionError(error) && item.retryCount < item.maxRetries) {
+			// Re-enqueue with exponential backoff
+			const delay = Math.pow(2, item.retryCount) * 1000;
+			await queue.enqueue({ ...item, retryCount: item.retryCount + 1 }, delay);
+		} else {
+			// Log failure for manual intervention
+			await logFailedUpdate(item, error);
+		}
+	}
+}
+```
+
+The queue processor can also optionally pull similar entries from the queue and batch them together, reducing the total number of transactions needed. This approach ensures that even under high contention, all updates eventually succeed without manual intervention.
+
+## Lessons if You're Considering This
+
+If I were starting over, here's what I'd tell myself before writing a single line of sync code:
+
+1. Find your natural data boundary (workspace, project, tenant—whatever fits your domain) so you have something to bound the size of what you're loading upfront
+2. Match your sync engine to your actual database model—NoSQL and SQL point you toward pretty different tools
+3. Budget for client storage and compute, not just the server costs you're used to thinking about
+4. Design your bootstrap strategy before your datasets get huge, not after you're paged about a slow initial load
+5. Expect contention at the edges—bulk jobs and background processes will find the cracks even when your client-side story is smooth
+
+## Resources
+
+A few things worth reading if you want to go deeper than this post:
+
+- ["Local-first software"](https://www.inkandswitch.com/local-first/) - Ink & Switch, 2019
+- ["Scaling the Linear Sync Engine"](https://linear.app/now/scaling-the-linear-sync-engine)
+- ["The Offline-first Landscape"](https://marcoapp.io/blog/offline-first-landscape)
+- Replicache, Zero, ElectricSQL, PowerSync, Automerge, Yjs—worth a look depending on your stack
