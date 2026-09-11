@@ -5,7 +5,7 @@ publishDate: "2026-02-17"
 updatedDate: "17 Feb 2026"
 tags: ["software-architecture", "local-first", "web-development", "offline"]
 slidesUrl: "/slides/local-first"
-pinned: true
+pinned: false
 ---
 
 ## Why this Article

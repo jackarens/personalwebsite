@@ -1,5 +1,5 @@
 ---
-title: "Local-first Web Apps"
+title: "Local-first Web Apps (Nebraska.code())"
 description: "A tour of the local-first paradigm @ Layer."
 publishDate: "2026-07-08"
 updatedDate: "8 Jul 2026"

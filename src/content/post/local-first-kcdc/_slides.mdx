@@ -226,7 +226,7 @@ import how05 from "./how-05.svg";
 
 <Fragment as="div">
 	<Callout type="note" title="Propagation was the trap">
-		Copy related fields onto parent docs. Works until it doesn't.
+		Copy related fields onto parent docs. Every edit fans out to every copy.
 	</Callout>
 </Fragment>
 </Slide>
@@ -276,9 +276,7 @@ import how05 from "./how-05.svg";
 </ul>
 
 <Fragment as="div">
-	<Callout type="warning" title="Match the engine to your database">
-		Should be obvious, but isn't always clear
-	</Callout>
+	<Callout type="warning" title="Match the engine to your database" />
 </Fragment>
 </Slide>
 
@@ -397,7 +395,7 @@ kvStore: { create: (name) => new MyStore(name), drop },
 
 <Fragment as="div" class="text-[0.85em]">
 	<Callout type="note" title="All of them evict">
-		Picking a store doesn't buy durability. That fight is two slides away.
+		Picking a store doesn't buy durability.
 	</Callout>
 </Fragment>
 </Slide>
@@ -859,6 +857,47 @@ function pull(cookie) {
 
 </Slide>
 
+<Slide>
+## The Payoff: One Document
+
+<table>
+	<thead>
+		<tr>
+			<th>Open one element</th>
+			<th class="text-center">Firestore</th>
+			<th class="text-center">Replicache</th>
+			<th class="text-center">Delta</th>
+		</tr>
+	</thead>
+	<tbody>
+		<Fragment as="tr">
+			<td>Small project</td>
+			<td class="text-center">91 ms</td>
+			<td class="text-center">9 ms</td>
+			<td class="text-center">10&times;</td>
+		</Fragment>
+		<Fragment as="tr">
+			<td>Medium project</td>
+			<td class="text-center">90 ms</td>
+			<td class="text-center">20 ms</td>
+			<td class="text-center">4&times;</td>
+		</Fragment>
+		<Fragment as="tr">
+			<td>95,000 elements</td>
+			<td class="text-center">348 ms</td>
+			<td class="text-center">21 ms</td>
+			<td class="text-center">17&times;</td>
+		</Fragment>
+		<Fragment as="tr">
+			<td>Offline</td>
+			<td class="text-center">❌</td>
+			<td class="text-center">✅ same</td>
+			<td class="text-center">&mdash;</td>
+		</Fragment>
+	</tbody>
+</table>
+</Slide>
+
 <Slide centerHeader={true}>
 ## It All Worked Great&hellip;
 
@@ -886,7 +925,7 @@ function pull(cookie) {
 </ul>
 
 <Fragment as="div">
-	<Callout type="tip" title="Key insight">
+	<Callout type="tip" title="What made bundles possible">
 		Serve *slightly stale* data first — the next pull catches up
 	</Callout>
 </Fragment>
@@ -906,10 +945,6 @@ function pull(cookie) {
 	<Fragment as="li">70–90% of the data lands in one request</Fragment>
 	<Fragment as="li">Background sync picks up the rest</Fragment>
 </ul>
-
-<Fragment as="div">
-	<Callout type="note" title="Prior art: Firestore does exactly this" />
-</Fragment>
 
 <Fragment as="div">
 	<Callout type="tip" title="This is what the custom `puller` was for" />
@@ -1003,11 +1038,6 @@ const rows = all
   .sort((a, b) => a.name.localeCompare(b.name));
 ```
 
-<Fragment as="div">
-	<Callout type="caution" title="Fine until it isn't">
-		Every keystroke rescans, rehydrates, and re-sorts every element in the project.
-	</Callout>
-</Fragment>
 </Slide>
 
 <Slide>
@@ -1015,16 +1045,14 @@ const rows = all
 
 **The instant queries we promised aren't free**
 
-<div class="two-column items-start!">
-	<div>
-		<ul class="p-4">
-			<Fragment as="li">Sorting means loading it all into memory</Fragment>
-			<Fragment as="li">Replicache indexing exists, but isn't first class</Fragment>
-			<Fragment as="li">Solution: **LokiDB** as an in-memory index</Fragment>
-			<Fragment as="li">Index only what filter/sort needs</Fragment>
-		</ul>
-	</div>
-	<Fragment as="div" class="flex h-full w-full flex-col">
+<div class="r-stack">
+	<ul class="p-4">
+		<Fragment as="li">Sorting means loading it all into memory</Fragment>
+		<Fragment as="li">Replicache indexing exists, but isn't first class</Fragment>
+		<Fragment as="li">Solution: **LokiDB** as an in-memory index</Fragment>
+		<Fragment as="li">Index only what filter/sort needs</Fragment>
+	</ul>
+	<Fragment as="div" class="flex h-full w-full flex-col items-center justify-center">
 		<Image src={xkcd378} alt="XKCD 378 - Real Programmers" layout="full-width" fit="contain" class="min-h-0" />
 		<div class="mt-2 text-center text-[0.5em] opacity-70">_XKCD 378_ by Randall Munroe 2.5</div>
 	</Fragment>
@@ -1098,12 +1126,44 @@ const rows = elements
 </Slide>
 
 <Slide>
-	<Image
-		src={lokiQuery}
-		alt="LokiDB query example"
-		layout="full-width"
-		fit="contain"
-	/>
+## Filtered & Sorted Views
+
+<table>
+	<thead>
+		<tr>
+			<th>Load a view</th>
+			<th class="text-center">Elasticsearch</th>
+			<th class="text-center">LokiDB + Replicache</th>
+			<th class="text-center">Delta</th>
+		</tr>
+	</thead>
+	<tbody>
+		<Fragment as="tr">
+			<td>Small project</td>
+			<td class="text-center">248 ms</td>
+			<td class="text-center">1 ms</td>
+			<td class="text-center">190&times;</td>
+		</Fragment>
+		<Fragment as="tr">
+			<td>Medium project</td>
+			<td class="text-center">317 ms</td>
+			<td class="text-center">4 ms</td>
+			<td class="text-center">88&times;</td>
+		</Fragment>
+		<Fragment as="tr">
+			<td>95,000 &mdash; filter</td>
+			<td class="text-center">283 ms</td>
+			<td class="text-center">11 ms</td>
+			<td class="text-center">25&times;</td>
+		</Fragment>
+		<Fragment as="tr">
+			<td>95,000 &mdash; filter + sort</td>
+			<td class="text-center">462 ms</td>
+			<td class="text-center">230 ms</td>
+			<td class="text-center">2&times;</td>
+		</Fragment>
+	</tbody>
+</table>
 </Slide>
 
 <Slide>
@@ -1112,9 +1172,8 @@ const rows = elements
 **Bulk backend writes fail under contention**
 
 <ul class="p-4">
+	<Fragment as="li">Server-side bulk updates trigger multiple independent followup requests</Fragment>
 	<Fragment as="li">The client never hits this — it retries at will</Fragment>
-	<Fragment as="li">Local changes can't contend with anything</Fragment>
-	<Fragment as="li">Server-side bulk updates absolutely can</Fragment>
 </ul>
 
 <Fragment as="div">
@@ -1122,28 +1181,6 @@ const rows = elements
 		Failed updates retry until they land, or get logged and dropped
 	</Callout>
 </Fragment>
-</Slide>
-
-<Slide>
-## Queue + Retry
-
-```ts
-async function processQueueItem(item) {
-  const { retryCount: n, maxRetries } = item;
-  try {
-    await applyUpdates(item.projectId, item.updates);
-  } catch (err) {
-    if (isContentionError(err) && n < maxRetries) {
-      await queue.enqueue(
-        { ...item, retryCount: n + 1 },
-        2 ** n * 1000);      // backoff
-    } else {
-      await logFailedUpdate(item, err);
-    }
-  }
-}
-```
-
 </Slide>
 
 <Slide class="section-header">
@@ -1156,9 +1193,9 @@ async function processQueueItem(item) {
 ## When *Not* to Reach for This
 
 <ul class="p-0">
-	<Fragment as="li">Every read needs server-enforced authorization</Fragment>
 	<Fragment as="li">One scope's dataset can't fit on a device</Fragment>
-	<Fragment as="li">Heavy collaborative editing — use a CRDT library</Fragment>
+	<Fragment as="li">Heavy collaborative editing or ephemeral sessions — use a CRDT library</Fragment>
+	<Fragment as="li">Offline use is non-existent or not important</Fragment>
 </ul>
 
 <Fragment as="div">
@@ -1176,19 +1213,8 @@ async function processQueueItem(item) {
 	<Fragment as="li">Browser, mobile, or fully offline?</Fragment>
 	<Fragment as="li">How big does one scope's dataset get?</Fragment>
 	<Fragment as="li">Two people edit the same record. Now what?</Fragment>
-	<Fragment as="li">Eventual consistency, or right *now*?</Fragment>
+	<Fragment as="li">Which libraries support my database?</Fragment>
 </ul>
-</Slide>
-
-<Slide>
-## Lessons to Consider
-
-<ol class="p-4">
-	<Fragment as="li">Match the engine to your database, not the hype</Fragment>
-	<Fragment as="li">Your users' devices are infrastructure now</Fragment>
-	<Fragment as="li">Design the edge cases first — bootstrap, collisions, eviction</Fragment>
-	<Fragment as="li">Pick mutator granularity deliberately — it sets your conflict behavior</Fragment>
-</ol>
 </Slide>
 
 <Slide>
@@ -1198,7 +1224,7 @@ async function processQueueItem(item) {
 	<Fragment as="li">["Local-first software"](https://www.inkandswitch.com/local-first/) — Ink & Switch</Fragment>
 	<Fragment as="li">["Scaling the Linear Sync Engine"](https://linear.app/now/scaling-the-linear-sync-engine)</Fragment>
 	<Fragment as="li">["The Offline-first Landscape"](https://marcoapp.io/blog/offline-first-landscape)</Fragment>
-	<Fragment as="li">Replicache, Zero, ElectricSQL, PowerSync, Automerge, Yjs</Fragment>
+	<Fragment as="li">Popular libraries: Replicache, Zero, ReactQuery, ElectricSQL, PowerSync, Automerge, Yjs</Fragment>
 </ul>
 </Slide>
 
@@ -1206,6 +1232,14 @@ async function processQueueItem(item) {
 ## Questions?
 
 <p class="mt-8! opacity-70!">Slides & writeup @ jackarens.com</p>
+</Slide>
+
+<Slide class="qr-slide" centerHeader>
+## Session Feedback
+
+<div class="qr-plate">
+	<Image src={sessionFeedbackQr} alt="QR code linking to the KCDC session feedback form" />
+</div>
 </Slide>
 
 <Slide>
@@ -1230,10 +1264,3 @@ async function processQueueItem(item) {
 </Fragment>
 </Slide>
 
-<Slide class="qr-slide" centerHeader>
-## Session Feedback
-
-<div class="qr-plate">
-	<Image src={sessionFeedbackQr} alt="QR code linking to the KCDC session feedback form" />
-</div>
-</Slide>

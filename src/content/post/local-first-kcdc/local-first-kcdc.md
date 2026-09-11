@@ -7,7 +7,7 @@ tags:
   ["software-architecture", "local-first", "web-development", "offline", "kcdc"]
 slidesUrl: "/slides/local-first-kcdc"
 draft: false
-pinned: false
+pinned: true
 ---
 
 This is the talk version of Layer's local-first architecture: **"Stop Waiting for the Server"**, presented at KCDC 2026. The slides are the artifact here — [view the deck](/slides/local-first-kcdc).
