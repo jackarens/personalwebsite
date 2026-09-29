@@ -2,11 +2,13 @@
 interface Props {
 	class?: string;
 	centerHeader?: boolean;
+	/** Reveal background attributes (data-background-color, -gradient, …) paint the whole viewport. */
+	[key: `data-${string}`]: string | boolean | undefined;
 }
 
-const { class: className, centerHeader = false } = Astro.props;
+const { class: className, centerHeader = false, ...rest } = Astro.props;
 ---
 
-<section class={`${className ?? ""} ${centerHeader ? "center-header" : ""}`}>
+<section class={`${className ?? ""} ${centerHeader ? "center-header" : ""}`} {...rest}>
 	<slot />
 </section>

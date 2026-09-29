@@ -58,6 +58,8 @@ const slides = defineCollection({
 		baseFontSize: z.number().optional(),
 		description: z.string().optional(),
 		postSlug: z.string().optional(),
+		/** "code" (default, monospace) or "keynote" (display type, dark canvas, posters). */
+		theme: z.enum(["code", "keynote"]).optional(),
 	}),
 });
 

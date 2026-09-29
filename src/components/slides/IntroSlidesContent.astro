@@ -7,16 +7,18 @@ import layerAppView from "../../assets/layer-app-view.png";
 
 interface Props {
 	personal?: boolean;
+	/** Include the "About Layer" slide. Set false for decks that introduce Layer later. */
+	layer?: boolean;
 }
 
-const { personal = true } = Astro.props;
+const { personal = true, layer = true } = Astro.props;
 ---
 
 {
 	personal && (
 		<section>
 			<h2>About Me</h2>
-			<div class="two-column">
+			<div class="two-column about-me">
 				<div class="portrait">
 					<Image src={familyPicture} layout="constrained" alt="Family Picture" fit="scale-down" />
 				</div>
@@ -36,6 +38,8 @@ const { personal = true } = Astro.props;
 	)
 }
 
+{
+	layer && (
 <section>
 	<h2>About Layer</h2>
 	<div class="r-stack">
@@ -54,3 +58,5 @@ const { personal = true } = Astro.props;
 			title="🔲 All Rooms"></iframe>
 	</div>
 </section>
+	)
+}

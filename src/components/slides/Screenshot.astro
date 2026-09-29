@@ -1,0 +1,59 @@
+---
+/**
+ * A real screenshot (LinkedIn, X, a news site), framed and tilted so a wall
+ * of them reads like a pinboard. Drop the image into the deck's `shots/`
+ * folder under `name` and it appears; until then a labelled placeholder
+ * holds its place so the layout can be checked without the file.
+ *
+ *   <Screenshot name="linkedin-saas-dead" platform="linkedin" hint="…" />
+ *   -> src/content/post/<deck>/shots/linkedin-saas-dead.{png,jpg,jpeg,webp}
+ */
+import type { ImageMetadata } from "astro";
+import { Image } from "astro:assets";
+
+interface Props {
+	/** File name in shots/, without extension. */
+	name: string;
+	/** Shapes the frame and the placeholder. */
+	platform?: "linkedin" | "x" | "news" | "phone";
+	/** What to capture, shown on the placeholder. */
+	hint?: string;
+	alt?: string;
+	tilt?: number;
+	/** Collage placement, as % of the slide: left, top, width. */
+	x?: number;
+	y?: number;
+	w?: number;
+	class?: string;
+}
+
+const { name, platform = "news", hint, alt, tilt = 0, x, y, w, class: className } = Astro.props;
+const place = x === undefined ? "" : `;--x:${x}%;--y:${y ?? 0}%;--w:${w ?? 40}%`;
+
+const shots = import.meta.glob<{ default: ImageMetadata }>(
+	"/src/content/post/*/shots/*.{png,jpg,jpeg,webp}",
+	{ eager: true },
+);
+const match = Object.entries(shots).find(([path]) =>
+	path.replace(/\.[^.]+$/, "").endsWith(`/shots/${name}`),
+)?.[1]?.default;
+
+const label = { linkedin: "LinkedIn", x: "X", news: "Article", phone: "Screenshot" }[platform];
+---
+
+<figure
+	class:list={["shot", `shot-${platform}`, { "shot-empty": !match }, className]}
+	style={`--tilt:${tilt}deg${place}`}
+>
+	{
+		match ? (
+			<Image src={match} alt={alt ?? hint ?? name} widths={[800, 1600]} sizes="800px" />
+		) : (
+			<div class="shot-placeholder">
+				<span class="shot-platform">{label}</span>
+				{hint && <span class="shot-hint">{hint}</span>}
+				<code class="shot-file">shots/{name}.png</code>
+			</div>
+		)
+	}
+</figure>

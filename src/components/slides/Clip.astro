@@ -1,0 +1,23 @@
+---
+/**
+ * A headline "clipping" for the feed slide, styled like a cropped screenshot
+ * of the article: outlet masthead, headline, byline. Real headlines only;
+ * for social posts use <Screenshot> with the real capture.
+ */
+interface Props {
+	source: string;
+	date?: string;
+	byline?: string;
+	tilt?: number;
+	class?: string;
+}
+
+const { source, date, byline, tilt = 0, class: className } = Astro.props;
+const by = [byline, date].filter(Boolean).join(" · ");
+---
+
+<div class:list={["clip", className]} style={`--tilt:${tilt}deg`}>
+	<span class="src">{source}</span>
+	<span class="hl"><slot /></span>
+	{by && <span class="by">{by}</span>}
+</div>

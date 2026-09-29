@@ -1,0 +1,14 @@
+---
+interface Props {
+	num: string;
+	label: string;
+	class?: string;
+}
+
+const { num, label, class: className } = Astro.props;
+---
+
+<div class:list={["stat", className]}>
+	<div class="num">{num}</div>
+	<div class="lbl">{label}</div>
+</div>

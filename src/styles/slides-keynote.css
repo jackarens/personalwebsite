@@ -1,0 +1,1355 @@
+/*
+ * Keynote theme for slide decks.
+ *
+ * Layered on top of slides.css and scoped to `.reveal.theme-keynote`, so the
+ * older code-style decks render exactly as delivered. Opt in per deck with
+ * `theme: keynote` in the _slides.mdx frontmatter.
+ *
+ * The look: dark ink canvas, a wide display face for headlines, a plain sans
+ * for body copy, and mono reserved for code. Poster slides (solid colour,
+ * one statement) carry the argument; everything else supports them.
+ */
+
+.reveal.theme-keynote {
+	--k-ink: #0e1417;
+	--k-sheet: #151d21;
+	--k-text: #e2e9e7;
+	--k-muted: #93a3a6;
+	--k-rule: #2e3c41;
+	--k-accent: #52c2b6;
+	--k-accent-soft: #163a3b;
+	--k-red: #a83a2e;
+	--k-teal: #0e6b66;
+	--k-amber: #8e5b0c;
+	--k-violet: #62489a;
+	--k-code-bg: #1c262a;
+
+	--color-global-bg: var(--k-ink);
+	--color-global-text: var(--k-text);
+	--color-accent: var(--k-accent);
+	--color-quote: var(--k-muted);
+
+	--f-display: "Archivo", "Arial Narrow", Arial, sans-serif;
+	--f-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+	--f-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+	font-family: var(--f-body);
+	font-weight: 400;
+	line-height: 1.35;
+}
+
+.reveal-viewport:has(.theme-keynote),
+html:has(.theme-keynote),
+body:has(.theme-keynote) {
+	background-color: #0e1417;
+}
+
+/* No fill on the 16:9 box: the viewport behind it is already ink, and
+   posters colour the viewport via data-background-color. One colour layer
+   means the fade between slides covers the whole screen evenly. */
+.reveal.theme-keynote .slides section {
+	background-color: transparent;
+	padding: 56px 72px;
+}
+
+/* ---------- Type ---------- */
+
+.reveal.theme-keynote h1,
+.reveal.theme-keynote h2,
+.reveal.theme-keynote h3 {
+	font-family: var(--f-display);
+	font-stretch: 112%;
+	font-weight: 750;
+	letter-spacing: -0.02em;
+	line-height: 1.02;
+	color: var(--k-text);
+	text-wrap: balance;
+}
+
+/* rehype-autolink-headings wraps heading text in an anchor; keep it the
+   heading's colour, not the link colour. */
+.reveal.theme-keynote h1 a,
+.reveal.theme-keynote h2 a,
+.reveal.theme-keynote h3 a {
+	color: inherit;
+}
+
+.reveal.theme-keynote h1 {
+	font-size: 2.6em;
+}
+
+.reveal.theme-keynote h2 {
+	font-size: 1.55em;
+	margin-bottom: 0.4em;
+}
+
+.reveal.theme-keynote h3 {
+	font-size: 1.05em;
+	font-stretch: 105%;
+	font-weight: 700;
+	color: var(--k-accent);
+}
+
+/* Slide titles sit left, like a magazine spread, not centred like a memo. */
+.reveal.theme-keynote .slides section > h1,
+.reveal.theme-keynote .slides section > h2,
+.reveal.theme-keynote .slides section > h3 {
+	text-align: left;
+}
+
+.reveal.theme-keynote .eyebrow {
+	font-family: var(--f-mono);
+	font-size: 0.42em;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	color: var(--k-accent);
+	margin-bottom: 0.9em;
+}
+
+.reveal.theme-keynote p,
+.reveal.theme-keynote li {
+	font-size: 0.75em;
+	line-height: 1.38;
+}
+
+.reveal.theme-keynote li {
+	margin-bottom: 0.5em;
+}
+
+.reveal.theme-keynote ul {
+	list-style: none;
+	margin-left: 0;
+}
+
+.reveal.theme-keynote ul > li {
+	position: relative;
+	padding-left: 1.1em;
+}
+
+.reveal.theme-keynote ul > li::before {
+	content: "";
+	position: absolute;
+	left: 0;
+	top: 0.55em;
+	width: 0.45em;
+	height: 0.45em;
+	background: var(--k-accent);
+}
+
+.reveal.theme-keynote strong {
+	color: #fff;
+	font-weight: 600;
+}
+
+.reveal.theme-keynote .muted {
+	color: var(--k-muted);
+}
+
+.reveal.theme-keynote a {
+	color: var(--k-accent);
+}
+
+/* ---------- Code ---------- */
+
+.reveal.theme-keynote code {
+	font-family: var(--f-mono);
+	background: var(--k-code-bg);
+	border: 0;
+	border-radius: 3px;
+	padding-inline: 0.3em;
+	font-size: 0.85em;
+}
+
+.reveal.theme-keynote .expressive-code {
+	--ec-codeFontFml: var(--f-mono);
+	--ec-codeFontSize: 22px;
+	max-width: 100%;
+	box-sizing: border-box;
+	--ec-codeLineHt: 1.4;
+	--ec-uiFontSize: 18px;
+}
+
+/* ---------- Title slide ---------- */
+
+.reveal.theme-keynote section.title-slide {
+	align-items: flex-start;
+	text-align: left;
+	justify-content: flex-end;
+	/* The teal glow is the slide's data-background-gradient, so it spans the
+	   whole viewport instead of stopping at the 16:9 box's edge. */
+}
+
+.reveal.theme-keynote section.title-slide h1 {
+	font-size: 2.35em;
+	margin-bottom: 0.35em;
+	max-width: 11em;
+}
+
+.reveal.theme-keynote section.title-slide .subtitle {
+	font-family: var(--f-body);
+	font-size: 0.85em;
+	color: var(--k-muted);
+	margin-bottom: 1.6em;
+	max-width: 30em;
+}
+
+.reveal.theme-keynote section.title-slide .author {
+	font-family: var(--f-display);
+	font-weight: 700;
+	font-size: 0.8em;
+	opacity: 1;
+}
+
+.reveal.theme-keynote section.title-slide .role {
+	font-size: 0.6em;
+	color: var(--k-muted);
+	opacity: 1;
+	margin-top: 0.1em;
+}
+
+/* ---------- Poster slides ---------- */
+
+.reveal.theme-keynote section.poster {
+	justify-content: center;
+	align-items: flex-start;
+	background-color: var(--poster-bg, var(--k-red));
+	color: #fff;
+}
+
+/* Poster.astro also sets data-background-color, which Reveal paints across
+   the whole viewport. Let that be the only colour layer: a second one on the
+   16:9 box slides while the viewport fades, and the two visibly disagree. */
+.reveal.theme-keynote section.poster[data-background-color] {
+	background-color: transparent;
+}
+
+.reveal.theme-keynote section.poster.centered {
+	align-items: center;
+	text-align: center;
+}
+
+.reveal.theme-keynote section.poster.centered h1,
+.reveal.theme-keynote section.poster.centered h2,
+.reveal.theme-keynote section.poster.centered p {
+	text-align: center;
+}
+
+.reveal.theme-keynote section.poster h1,
+.reveal.theme-keynote section.poster h2 {
+	color: #fff;
+	font-size: 3.2em;
+	font-stretch: 118%;
+	font-weight: 800;
+	line-height: 0.95;
+	margin: 0;
+}
+
+/* h2 posters carry a sentence, not a slogan; give them room to wrap. */
+.reveal.theme-keynote section.poster h2 {
+	font-size: 2.4em;
+	max-width: 12em;
+}
+
+.reveal.theme-keynote section.poster h1 .strike,
+.reveal.theme-keynote section.poster h2 .strike {
+	text-decoration: line-through;
+	text-decoration-thickness: 0.08em;
+	opacity: 0.55;
+}
+
+.reveal.theme-keynote section.poster p {
+	color: rgba(255, 255, 255, 0.82);
+	font-size: 0.9em;
+	margin-top: 0.9em;
+	max-width: 24em;
+}
+
+.reveal.theme-keynote section.poster .eyebrow {
+	color: rgba(255, 255, 255, 0.7);
+}
+
+.reveal.theme-keynote section.poster.tone-teal {
+	--poster-bg: var(--k-teal);
+}
+.reveal.theme-keynote section.poster.tone-red {
+	--poster-bg: var(--k-red);
+}
+.reveal.theme-keynote section.poster.tone-amber {
+	--poster-bg: var(--k-amber);
+}
+.reveal.theme-keynote section.poster.tone-violet {
+	--poster-bg: var(--k-violet);
+}
+.reveal.theme-keynote section.poster.tone-ink {
+	--poster-bg: var(--k-ink);
+}
+
+/* Section headers get the same treatment at a smaller size. */
+.reveal.theme-keynote section.section-header {
+	align-items: flex-start;
+	text-align: left;
+	justify-content: flex-end;
+}
+
+.reveal.theme-keynote section.section-header h2 {
+	font-size: 2.2em;
+	text-align: left;
+}
+
+.reveal.theme-keynote section.section-header .eyebrow {
+	font-size: 0.45em;
+}
+
+/* ---------- Cards ---------- */
+
+.reveal.theme-keynote .cards {
+	display: grid;
+	grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr));
+	gap: 0.5em;
+	margin-top: 0.3em;
+	flex: 0 1 auto;
+	min-height: 0;
+	align-content: start;
+}
+
+/* A fragment wrapper is the grid item; let the card inside fill it so
+   cards in one row come out the same height. */
+.reveal.theme-keynote .cards > .fragment {
+	display: flex;
+}
+
+.reveal.theme-keynote .cards > .fragment > .card {
+	flex: 1 1 auto;
+}
+
+.reveal.theme-keynote .card {
+	background: var(--k-sheet);
+	border: 1px solid var(--k-rule);
+	padding: 0.55em 0.7em;
+	display: flex;
+	flex-direction: column;
+	gap: 0.3em;
+	min-width: 0;
+}
+
+.reveal.theme-keynote .card h3 {
+	font-size: 0.72em;
+	margin: 0;
+}
+
+.reveal.theme-keynote .card p {
+	font-size: 0.5em;
+	margin: 0;
+	color: var(--k-muted);
+}
+
+.reveal.theme-keynote .card .kicker {
+	font-family: var(--f-mono);
+	font-size: 0.42em;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--k-accent);
+}
+
+/* Headline clippings: styled like a cropped screenshot of the article
+   page (masthead, headline, byline), not a card. Real headlines only. */
+.reveal.theme-keynote .clip {
+	background: #fbfaf7;
+	color: #141414;
+	border-radius: 4px;
+	padding: 0.5em 0.65em 0.55em;
+	display: flex;
+	flex-direction: column;
+	gap: 0.3em;
+	transform: rotate(var(--tilt, 0deg));
+	box-shadow:
+		0 1px 0 rgba(255, 255, 255, 0.4) inset,
+		0 14px 30px rgba(0, 0, 0, 0.45);
+	min-width: 0;
+}
+
+.reveal.theme-keynote .clip .src {
+	font-family: Georgia, "Times New Roman", serif;
+	font-weight: 700;
+	font-size: 0.42em;
+	letter-spacing: 0.01em;
+	color: #111;
+	border-bottom: 1px solid #d8d4cc;
+	padding-bottom: 0.3em;
+}
+
+.reveal.theme-keynote .clip .hl {
+	font-family: Georgia, "Times New Roman", serif;
+	font-weight: 700;
+	font-size: 0.5em;
+	line-height: 1.14;
+	letter-spacing: -0.01em;
+}
+
+.reveal.theme-keynote .clip .by {
+	font-family: var(--f-body);
+	font-size: 0.36em;
+	color: #6d6a64;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+}
+
+/* Screenshots of real posts. A placeholder holds the slot until the file
+   lands in shots/. */
+.reveal.theme-keynote .shots {
+	display: grid;
+	grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr));
+	gap: 1.1em;
+	align-items: center;
+	flex: 1 1 0;
+	min-height: 0;
+	margin-top: 0.2em;
+}
+
+.reveal.theme-keynote .shot {
+	margin: 0;
+	min-width: 0;
+	min-height: 0;
+	max-height: 100%;
+	transform: rotate(var(--tilt, 0deg));
+	border-radius: 10px;
+	overflow: hidden;
+	background: #fff;
+	box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+	display: flex;
+}
+
+.reveal.theme-keynote .shot img {
+	display: block;
+	width: 100%;
+	height: auto;
+	max-height: 470px;
+	object-fit: cover;
+	object-position: top;
+	margin: 0;
+}
+
+.reveal.theme-keynote .shot-empty {
+	background: var(--k-sheet);
+	border: 2px dashed var(--k-rule);
+	box-shadow: none;
+	aspect-ratio: 4 / 5;
+	max-height: 440px;
+	width: 100%;
+}
+
+.reveal.theme-keynote .shot-placeholder {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	gap: 0.5em;
+	padding: 0.8em;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.reveal.theme-keynote .shot-platform {
+	font-family: var(--f-display);
+	font-weight: 750;
+	font-size: 0.6em;
+	color: var(--k-text);
+}
+
+.reveal.theme-keynote .shot-linkedin .shot-platform {
+	color: #70b5f9;
+}
+
+.reveal.theme-keynote .shot-hint {
+	overflow-wrap: anywhere;
+	font-size: 0.42em;
+	line-height: 1.3;
+	color: var(--k-muted);
+}
+
+.reveal.theme-keynote .shot-file {
+	font-size: 0.34em;
+	color: #e2b368;
+	align-self: flex-start;
+}
+
+/* Ticker tape: symbol, drawdown. Red on ink, like a trading screen. */
+.reveal.theme-keynote .ticker {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.35em 1.1em;
+	font-family: var(--f-mono);
+	font-size: 0.5em;
+	padding: 0.45em 0.7em;
+	background: #0a0f11;
+	border-top: 1px solid var(--k-rule);
+	border-bottom: 1px solid var(--k-rule);
+	margin: 0.1em 0 0.3em;
+}
+
+.reveal.theme-keynote .ticker span {
+	white-space: nowrap;
+	color: var(--k-text);
+}
+
+.reveal.theme-keynote .ticker b {
+	font-weight: 500;
+	color: #ff6b5b;
+	margin-left: 0.4em;
+}
+
+.reveal.theme-keynote .ticker b::before {
+	content: "▼ ";
+	font-size: 0.8em;
+}
+
+/* Thesis slides: a pull quote, big and left-set. */
+.reveal.theme-keynote section.poster .quote {
+	font-family: var(--f-display);
+	font-stretch: 108%;
+	font-weight: 750;
+	font-size: 1.75em;
+	line-height: 1.08;
+	letter-spacing: -0.015em;
+	color: #fff;
+	max-width: 16em;
+	margin: 0;
+	text-wrap: balance;
+}
+
+.reveal.theme-keynote section.poster .quote::before {
+	content: "\201C";
+	display: block;
+	font-size: 2em;
+	line-height: 0.6;
+	height: 0.45em;
+	opacity: 0.5;
+}
+
+.reveal.theme-keynote section.poster .quote em {
+	font-style: normal;
+	text-decoration: underline;
+	text-decoration-thickness: 0.07em;
+	text-underline-offset: 0.12em;
+}
+
+/* Company-size spectrum: three bands, the middle one highlighted. */
+.reveal.theme-keynote .spectrum {
+	display: grid;
+	grid-template-columns: 1fr 1.35fr 1fr;
+	gap: 0.4em;
+	margin-top: 0.4em;
+}
+
+.reveal.theme-keynote .spectrum .band {
+	background: var(--k-sheet);
+	border: 1px solid var(--k-rule);
+	padding: 0.6em 0.7em;
+	display: flex;
+	flex-direction: column;
+	gap: 0.3em;
+	min-width: 0;
+}
+
+.reveal.theme-keynote .spectrum .band.hot {
+	background: var(--k-accent-soft);
+	border-color: var(--k-accent);
+}
+
+.reveal.theme-keynote .spectrum .band h3 {
+	font-size: 0.72em;
+	margin: 0;
+}
+
+.reveal.theme-keynote .spectrum .band p {
+	font-size: 0.5em;
+	margin: 0;
+	color: var(--k-muted);
+}
+
+.reveal.theme-keynote .spectrum .band.hot p {
+	color: var(--k-text);
+}
+
+.reveal.theme-keynote .spectrum-axis {
+	display: flex;
+	justify-content: space-between;
+	font-family: var(--f-mono);
+	font-size: 0.38em;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--k-muted);
+	margin-top: 0.5em;
+	border-top: 1px solid var(--k-rule);
+	padding-top: 0.4em;
+}
+
+/* Big numbered cards for the four examples. */
+.reveal.theme-keynote .card .idx {
+	font-family: var(--f-display);
+	font-stretch: 115%;
+	font-weight: 800;
+	font-size: 1.4em;
+	line-height: 1;
+	color: var(--k-accent);
+}
+
+/* Example section headers carry a one-line "the job" under the title. */
+.reveal.theme-keynote section.section-header .lede {
+	font-size: 0.72em;
+	color: var(--k-muted);
+	max-width: 26em;
+	margin-top: 0.3em;
+}
+
+/* ---------- Stats ---------- */
+
+.reveal.theme-keynote .stats {
+	display: grid;
+	grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr));
+	gap: 0.8em;
+	margin-top: 0.4em;
+}
+
+.reveal.theme-keynote .stat .num {
+	font-family: var(--f-display);
+	font-stretch: 115%;
+	font-weight: 800;
+	font-size: 2.2em;
+	line-height: 1;
+	letter-spacing: -0.03em;
+	font-variant-numeric: tabular-nums;
+	color: var(--k-accent);
+}
+
+.reveal.theme-keynote .stat .lbl {
+	font-size: 0.62em;
+	color: var(--k-muted);
+	margin-top: 0.3em;
+	max-width: 14em;
+}
+
+/* ---------- Statement / quote ---------- */
+
+.reveal.theme-keynote .statement {
+	font-family: var(--f-display);
+	font-stretch: 108%;
+	font-weight: 700;
+	font-size: 1.5em;
+	line-height: 1.12;
+	letter-spacing: -0.015em;
+	max-width: 15em;
+	margin: auto 0;
+	text-wrap: balance;
+}
+
+.reveal.theme-keynote .statement em {
+	font-style: normal;
+	color: var(--k-accent);
+}
+
+.reveal.theme-keynote blockquote {
+	border-left: 4px solid var(--k-accent);
+	font-style: normal;
+	font-family: var(--f-display);
+	font-size: 1.05em;
+	color: var(--k-text);
+}
+
+/* ---------- Two column ---------- */
+
+.reveal.theme-keynote .two-column ul,
+.reveal.theme-keynote .two-column ol {
+	font-size: 0.82em;
+}
+
+/* ---------- Rule under slide title ---------- */
+
+.reveal.theme-keynote .slides section:not(.poster) > h2::after {
+	content: "";
+	display: block;
+	width: 1.6em;
+	height: 0.12em;
+	background: var(--k-accent);
+	margin-top: 0.35em;
+}
+
+/* ---------- Tables ---------- */
+
+.reveal.theme-keynote table {
+	font-size: 0.58em;
+	width: 100%;
+}
+
+.reveal.theme-keynote table td {
+	padding: 0.35em 0.6em;
+}
+
+.reveal.theme-keynote table th {
+	font-family: var(--f-mono);
+	font-size: 0.75em;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--k-muted);
+	border-bottom: 1.5px solid var(--k-text);
+}
+
+.reveal.theme-keynote table td {
+	border-bottom: 1px solid var(--k-rule);
+}
+
+/* ---------- Progress / numbers ---------- */
+
+.reveal.theme-keynote .progress span {
+	background: var(--k-accent);
+}
+
+.reveal.theme-keynote .slide-number {
+	font-family: var(--f-mono);
+	color: var(--k-muted);
+}
+
+/* Fragments: fade up instead of plain appear. */
+.reveal.theme-keynote .fragment:not(.custom) {
+	transition:
+		opacity 0.35s ease,
+		transform 0.35s ease;
+	transform: translateY(-6px);
+}
+
+.reveal.theme-keynote .fragment.visible:not(.custom) {
+	transform: none;
+}
+
+/* Full-bleed chart slides */
+.reveal.theme-keynote .chart {
+	flex: 1 1 0;
+	min-height: 0;
+	display: flex;
+	align-items: center;
+}
+
+.reveal.theme-keynote .chart svg {
+	width: 100%;
+	height: auto;
+	max-height: 100%;
+	font-family: var(--f-body);
+}
+
+/* Fine print under a slide's main content. */
+.reveal.theme-keynote .note {
+	font-size: 0.55em;
+	line-height: 1.25;
+	color: var(--k-muted);
+	margin-top: 0.4em;
+	margin-bottom: 0;
+}
+
+/* The shared About Layer slide stacks an iframe that sits a few px low
+   under the keynote heading metrics. */
+.reveal.theme-keynote .r-stack {
+	padding-bottom: 10px;
+}
+
+/* Expressive Code lets its inner <code> run past the figure by its inline
+   padding, which the overflow guard reads as a right overflow. Contain it. */
+.reveal.theme-keynote .expressive-code pre > code {
+	box-sizing: border-box;
+	max-width: 100%;
+}
+
+.reveal.theme-keynote .expressive-code .ec-line {
+	box-sizing: border-box;
+	max-width: 100%;
+}
+
+/* Numbered lists keep browser numerals, styled to match the square bullets. */
+.reveal.theme-keynote ol {
+	margin-left: 0;
+	padding-left: 1.4em;
+	list-style: decimal;
+}
+
+.reveal.theme-keynote ol > li::marker {
+	color: var(--k-accent);
+	font-family: var(--f-display);
+	font-weight: 700;
+}
+
+/* Title-slide eyebrow sits above the h1 without the poster's colour wash. */
+.reveal.theme-keynote section.title-slide .eyebrow {
+	margin-bottom: 1.2em;
+}
+
+/* Big emoji / glyph under a poster headline. */
+.reveal.theme-keynote section.poster .glyph {
+	font-size: 3.2em;
+	line-height: 1;
+	margin-top: 0.25em;
+}
+
+/* Facts only the speaker can fill in. Loud on purpose; grep for .todo. */
+.reveal.theme-keynote .todo {
+	color: #e2b368;
+	background: rgba(226, 179, 104, 0.12);
+	padding: 0 0.25em;
+	border-radius: 3px;
+}
+
+/* Wide numbers need fewer columns; let the grid decide when to wrap. */
+.reveal.theme-keynote .stats .num {
+	font-size: 1.9em;
+	white-space: nowrap;
+}
+
+/* Simple API → MCP mapping table */
+.reveal.theme-keynote table.map td:first-child {
+	color: var(--k-muted);
+}
+
+.reveal.theme-keynote table.map td:nth-child(2) {
+	color: var(--k-accent);
+	font-family: var(--f-mono);
+	font-size: 0.9em;
+}
+
+/* About Me: photo centred in its column, bullets centred beside it. */
+.reveal.theme-keynote .about-me {
+	flex: 1 1 0;
+	min-height: 0;
+	align-items: center;
+}
+
+.reveal.theme-keynote .about-me .portrait {
+	justify-content: center;
+	align-items: center;
+	height: 100%;
+}
+
+.reveal.theme-keynote .about-me ul {
+	font-size: 0.85em;
+}
+
+/* Breathing room between a block (stats, cards, code, quote, table) and
+   whatever follows it. Bullets jammed under a stat row read as one blob. */
+.reveal.theme-keynote .slides section > .stats + *,
+.reveal.theme-keynote .slides section > .cards + *,
+.reveal.theme-keynote .slides section > .expressive-code + *,
+.reveal.theme-keynote .slides section > blockquote + *,
+.reveal.theme-keynote .slides section > table + *,
+.reveal.theme-keynote .slides section > .two-column + * {
+	margin-top: 0.9em;
+}
+
+/* Speaker notes: hidden on the projector, shown in Reveal's speaker view (press S). */
+.reveal.theme-keynote aside.notes {
+	display: none;
+}
+
+.reveal.theme-keynote .ticker .asof {
+	margin-left: auto;
+	color: var(--k-muted);
+	font-size: 0.85em;
+}
+
+/* 4:3 canvas (?aspect=4:3): same height, 25% narrower. Loosen the widest
+   grids so they wrap instead of running long. */
+.reveal.theme-keynote.aspect-43 .clip .hl {
+	font-size: 0.44em;
+}
+
+.reveal.theme-keynote.aspect-43 .expressive-code {
+	--ec-codeFontSize: 19px;
+}
+
+.reveal.theme-keynote.aspect-43 table {
+	font-size: 0.5em;
+}
+
+/* Tilted shots poke a few px past the edge; keep them inside. */
+.reveal.theme-keynote .shots {
+	padding-inline: 0.4em;
+}
+
+/* Collage: full-bleed, overlapping screenshots placed by --x/--y/--w. */
+.reveal.theme-keynote section.collage-slide {
+	padding: 0;
+}
+
+.reveal.theme-keynote .collage {
+	position: absolute;
+	inset: 0;
+	overflow: hidden;
+}
+
+.reveal.theme-keynote .collage > .shot,
+.reveal.theme-keynote .collage > .fragment > .shot {
+	position: absolute;
+	left: var(--x);
+	top: var(--y);
+	width: var(--w);
+	max-height: none;
+}
+
+/* Any capture shape works: landscape crops keep their ratio, tall phone
+   screenshots are cropped from the top so the headline stays in view. */
+.reveal.theme-keynote .collage .shot img {
+	max-height: 400px;
+	object-fit: cover;
+	object-position: top;
+}
+
+.reveal.theme-keynote .collage .shot-phone img,
+.reveal.theme-keynote .collage .shot-x img,
+.reveal.theme-keynote .collage .shot-linkedin img {
+	max-height: 520px;
+}
+
+.reveal.theme-keynote .collage .shot-empty {
+	aspect-ratio: 16 / 10;
+	max-height: none;
+	background: #1a2428;
+	border-color: #3a4a50;
+	box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* Later shots stack on top of earlier ones. */
+.reveal.theme-keynote .collage > .fragment {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+}
+
+.reveal.theme-keynote .collage-stamp {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.reveal.theme-keynote .collage-stamp span {
+	font-family: var(--f-display);
+	font-stretch: 118%;
+	font-weight: 800;
+	font-size: 2.1em;
+	color: #fff;
+	background: var(--k-red);
+	padding: 0.15em 0.5em;
+	box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+}
+
+/* Quote-poster byline: the supporting labels, quiet, under the quote. */
+.reveal.theme-keynote section.poster .byline {
+	font-family: var(--f-mono);
+	font-size: 0.5em;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--k-accent);
+	margin-top: 1.6em;
+	max-width: none;
+}
+
+/* Stacked cards: number on the left, title and copy beside it. */
+.reveal.theme-keynote .cards.stacked .card {
+	display: grid;
+	grid-template-columns: 2.2em 1fr;
+	column-gap: 0.6em;
+	align-items: center;
+	padding: 0.8em 1em;
+}
+
+.reveal.theme-keynote .cards.stacked .card .idx {
+	grid-row: span 2;
+	font-size: 1.8em;
+}
+
+.reveal.theme-keynote .cards.stacked .card h3 {
+	font-size: 0.95em;
+}
+
+.reveal.theme-keynote .cards.stacked .card p {
+	font-size: 0.6em;
+}
+
+/* Spectrum bands with titles only: taller, centred, bigger type. */
+.reveal.theme-keynote .spectrum .band {
+	min-height: 5.5em;
+	justify-content: center;
+	align-items: center;
+	text-align: center;
+}
+
+.reveal.theme-keynote .spectrum .band h3 {
+	font-size: 0.95em;
+}
+
+/* Hand-drawn-style ring around one card, with a tag pinned to it.
+   The ring appears with the tag's fragment. */
+.reveal.theme-keynote .card.ringable {
+	position: relative;
+	overflow: visible;
+}
+
+.reveal.theme-keynote .card.ringable::after {
+	content: "";
+	position: absolute;
+	inset: -0.3em -0.28em;
+	border: 3px solid #ff6b5b;
+	border-radius: 18px 28px 16px 24px / 24px 16px 26px 18px;
+	transform: rotate(-1.2deg);
+	opacity: 0;
+	transition: opacity 0.35s ease;
+	pointer-events: none;
+}
+
+.reveal.theme-keynote .card.ringable:has(.ring-tag.visible)::after {
+	opacity: 1;
+}
+
+/* Dim the other cards once the ring is up. */
+.reveal.theme-keynote .cards:has(.ring-tag.visible) > .fragment:not(:has(.ringable)) {
+	opacity: 0.35;
+}
+
+.reveal.theme-keynote .ring-tag {
+	position: absolute;
+	right: -0.6em;
+	bottom: -0.9em;
+	font-family: var(--f-display);
+	font-weight: 800;
+	font-size: 0.5em;
+	color: #fff;
+	background: #c2453a;
+	padding: 0.25em 0.6em;
+	transform: rotate(-4deg);
+	box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
+	white-space: nowrap;
+	z-index: 2;
+}
+
+.reveal.theme-keynote .ring-tag.fragment.visible {
+	transform: rotate(-4deg);
+}
+
+/* Docs slide: browser screenshot left, numbers right. */
+.reveal.theme-keynote .docs-frame {
+	display: grid;
+	grid-template-columns: 1.5fr 1fr;
+	gap: 1.2em;
+	align-items: center;
+	flex: 1 1 0;
+	min-height: 0;
+}
+
+.reveal.theme-keynote .shot.browser {
+	flex-direction: column;
+	transform: rotate(-1deg);
+	border-radius: 8px;
+}
+
+.reveal.theme-keynote .shot.browser::before {
+	content: "● ● ●   docs.layer.team";
+	display: block;
+	font-family: var(--f-mono);
+	font-size: 0.32em;
+	letter-spacing: 0.04em;
+	color: #7c8589;
+	background: #e9ebec;
+	padding: 0.45em 0.8em;
+	border-bottom: 1px solid #d5d8da;
+	white-space: pre;
+}
+
+.reveal.theme-keynote .shot.browser img {
+	max-height: 400px;
+	object-fit: cover;
+	object-position: top left;
+}
+
+.reveal.theme-keynote .docs-stats .num {
+	font-size: 1.25em;
+}
+
+.reveal.theme-keynote .docs-stats .lbl {
+	font-size: 0.5em;
+}
+
+.reveal.theme-keynote .docs-points {
+	margin-top: 0.9em;
+}
+
+.reveal.theme-keynote .docs-points li {
+	font-size: 0.6em;
+}
+
+/* Lead-in phrase inside a pull quote, set off in the accent colour. */
+.reveal.theme-keynote section.poster .quote .lead {
+	color: var(--k-accent);
+}
+
+/* Five-up request-path cards: narrow columns, so titles run smaller and
+   long hostnames may break rather than spill out of the card. */
+.reveal.theme-keynote .cards.flow .card h3 {
+	font-size: 0.58em;
+}
+
+.reveal.theme-keynote .card h3 {
+	overflow-wrap: break-word;
+}
+
+/* ---------- Finale: "Long live SaaS." takes over "SaaS is dead." ---------- */
+
+.reveal.theme-keynote section.poster.finale h1.dead {
+	position: relative;
+	display: inline-block;
+}
+
+/* Click 1: a white bar draws through the headline. */
+.reveal.theme-keynote section.poster.finale h1.dead::after {
+	content: "";
+	position: absolute;
+	left: -0.05em;
+	top: 52%;
+	height: 0.09em;
+	width: 0;
+	background: #fff;
+	transition: width 0.55s cubic-bezier(0.6, 0, 0.2, 1);
+}
+
+.reveal.theme-keynote section.poster.finale:has(.strike-go.visible) h1.dead::after {
+	width: calc(100% + 0.1em);
+}
+
+.reveal.theme-keynote section.poster.finale:has(.strike-go.visible) h1.dead,
+.reveal.theme-keynote section.poster.finale:has(.strike-go.visible) > .glyph {
+	opacity: 0.6;
+	transition: opacity 0.4s ease 0.3s;
+}
+
+/* Click 2: the teal panel wipes in from the left over the whole slide.
+   The panel overhangs the 16:9 box so it also covers the letterbox. */
+.reveal.theme-keynote section.poster.finale .takeover {
+	position: absolute;
+	inset: -100vmax;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	background: var(--k-teal);
+	clip-path: inset(0 100% 0 0);
+	opacity: 1;
+	visibility: visible;
+	transform: none;
+	transition: clip-path 0.8s cubic-bezier(0.7, 0, 0.2, 1);
+}
+
+.reveal.theme-keynote section.poster.finale .takeover.visible {
+	clip-path: inset(0 0 0 0);
+}
+
+.reveal.theme-keynote section.poster.finale .takeover .was {
+	font-family: var(--f-display);
+	font-stretch: 112%;
+	font-weight: 750;
+	font-size: 1.1em;
+	margin: 0 0 0.35em;
+	color: rgba(255, 255, 255, 0.55);
+	text-decoration: line-through;
+	text-decoration-thickness: 0.09em;
+}
+
+.reveal.theme-keynote section.poster.finale .takeover h1 {
+	font-size: 3.6em;
+}
+
+/* The strike trigger is an empty fragment; keep it out of layout. */
+.reveal.theme-keynote section.poster.finale .strike-go {
+	position: absolute;
+	width: 0;
+	height: 0;
+}
+
+/* ---------- Stock chart: recovery wipes in over the decline ---------- */
+
+/* Both SVGs share one viewBox and sit in identical boxes, so every point
+   lines up: the full chart is an overlay the exact size of the base. */
+.reveal.theme-keynote .chart-stack {
+	position: relative;
+}
+
+.reveal.theme-keynote .chart-stack .chart-base,
+.reveal.theme-keynote .chart-stack .chart-uptick > div {
+	flex: 1 1 auto;
+	align-self: stretch;
+	min-width: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+/* Size each SVG to its own aspect ratio (no letterboxing inside the element)
+   so a percentage clip lands on the same x as the viewBox coordinate. */
+.reveal.theme-keynote .chart-stack svg {
+	width: auto;
+	height: 100%;
+	max-width: 100%;
+	aspect-ratio: 1180 / 540;
+}
+
+.reveal.theme-keynote .chart-stack .chart-uptick {
+	position: absolute;
+	inset: 0;
+	display: flex;
+}
+
+/* Left of the April low (x 724.6 of 1180) the two charts are identical, so
+   the full chart only needs to reveal what lies to the right of it. */
+.reveal.theme-keynote .chart-stack .chart-uptick {
+	opacity: 1;
+	visibility: visible;
+}
+
+.reveal.theme-keynote .chart-stack .chart-uptick svg {
+	clip-path: inset(0 38.6% 0 0);
+	transition: clip-path 1.6s cubic-bezier(0.5, 0, 0.2, 1);
+}
+
+.reveal.theme-keynote .chart-stack .chart-uptick.visible svg {
+	clip-path: inset(0 0 0 0);
+}
+
+.reveal.theme-keynote .chart-stack .chart-base .end {
+	transition: opacity 0.3s ease;
+}
+
+.reveal.theme-keynote .chart-stack:has(.chart-uptick.visible) .chart-base .end {
+	opacity: 0;
+}
+
+/* ---------- Gold star stamped on a code block's top-right corner ---------- */
+
+.reveal.theme-keynote .starred {
+	position: relative;
+	width: 100%;
+}
+
+.reveal.theme-keynote .starred .gold-star {
+	position: absolute;
+	top: -0.55em;
+	right: -0.55em;
+	width: 1.6em;
+	height: 1.6em;
+	opacity: 0;
+	visibility: visible;
+	transform: scale(0) rotate(-180deg);
+	transition:
+		transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
+		opacity 0.2s ease;
+	pointer-events: none;
+}
+
+.reveal.theme-keynote .starred .gold-star.visible {
+	opacity: 1;
+	transform: scale(1) rotate(12deg);
+}
+
+.reveal.theme-keynote .starred .gold-star svg {
+	display: block;
+	width: 100%;
+	height: 100%;
+	fill: #f5c542;
+	stroke: #b8860b;
+	stroke-width: 0.8;
+	stroke-linejoin: round;
+	filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.55));
+}
+
+/* ---------- Image slide: one screenshot, full screen ---------- */
+
+/* The slide's data-background-color (white, to match the screenshot) fills
+   the viewport, so the image sits edge to edge with no visible frame. */
+.reveal.theme-keynote section.image-slide {
+	padding: 0;
+	justify-content: center;
+	align-items: center;
+}
+
+.reveal.theme-keynote section.image-slide img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	max-width: none;
+	max-height: none;
+	margin: 0;
+	object-fit: contain;
+}
+
+/* ---------- Sublist: a bullet's supporting items, a notch smaller ---------- */
+
+.reveal.theme-keynote ul.sublist {
+	margin: 0.35em 0 0;
+}
+
+.reveal.theme-keynote ul.sublist > li {
+	font-size: 0.85em;
+	margin-bottom: 0.2em;
+	padding-left: 1em;
+}
+
+.reveal.theme-keynote ul.sublist > li::before {
+	top: 0.6em;
+	width: 0.36em;
+	height: 0.36em;
+	background: none;
+	border: 1.5px solid var(--k-accent);
+	box-sizing: border-box;
+}
+
+/* Keep each resource URI on one line; a break at "document-view" reads as two items. */
+.reveal.theme-keynote ul.sublist code {
+	white-space: nowrap;
+}
+
+/* The 4:3 canvas has a narrower right column; shrink so the longest URI fits. */
+.reveal.theme-keynote.aspect-43 ul.sublist > li {
+	font-size: 0.74em;
+}
+
+/* ---------- Screenshot overlay: pops up over a slide on its last click ---------- */
+
+.reveal.theme-keynote .shot-overlay {
+	position: absolute;
+	inset: 0;
+	z-index: 5;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 36px 48px;
+	background: rgba(8, 12, 14, 0.72);
+	opacity: 0;
+	visibility: hidden;
+	transition:
+		opacity 0.35s ease,
+		visibility 0s linear 0.35s;
+}
+
+.reveal.theme-keynote .shot-overlay.visible {
+	opacity: 1;
+	visibility: visible;
+	transition: opacity 0.35s ease;
+}
+
+.reveal.theme-keynote .shot-overlay img {
+	display: block;
+	max-width: 100%;
+	max-height: 100%;
+	width: auto;
+	height: auto;
+	margin: 0;
+	border-radius: 10px;
+	box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+	transform: translateY(24px) scale(0.94);
+	transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.reveal.theme-keynote .shot-overlay.visible img {
+	transform: none;
+}

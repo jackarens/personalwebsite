@@ -1,0 +1,934 @@
+---
+title: "Your API Already Speaks MCP"
+description: "Notes from building Layer's MCP server. Lincoln.Code(), 29 Sep 2026."
+postSlug: "api-speaks-mcp/api-speaks-mcp"
+baseFontSize: 40
+theme: keynote
+---
+
+import Slide from "@/components/slides/Slide.astro";
+import Poster from "@/components/slides/Poster.astro";
+import Fragment from "@/components/slides/Fragment.astro";
+import IntroSlides from "@/components/slides/IntroSlides.astro";
+import Clip from "@/components/slides/Clip.astro";
+import Stat from "@/components/slides/Stat.astro";
+import Card from "@/components/slides/Card.astro";
+import Screenshot from "@/components/slides/Screenshot.astro";
+
+import saasStocks from "./saas-stocks.svg?raw";
+import saasStocksDecline from "./saas-stocks-decline.svg?raw";
+import complexFormula from "./complex-formula.png";
+import documentViewBuilder from "./document-view-builder.png";
+import slackInterrogation from "./slack-interrogation.png";
+import { Image } from "astro:assets";
+
+{/* Anything wrapped in <span class="todo"> is a fact only Jack can supply.
+    Fill it in or cut the bullet. grep todo. */}
+
+{/* ------------------------------------------------------------------ */}
+{/* OPEN                                                                */}
+{/* ------------------------------------------------------------------ */}
+
+<Slide class="title-slide" data-background-gradient="radial-gradient(70% 60% at 85% 15%, color-mix(in srgb, var(--k-teal) 55%, transparent), transparent 70%)">
+<p class="eyebrow">Lincoln.Code() · 29 September 2026</p>
+
+# Your API Already Speaks MCP
+
+<p class="subtitle">You just haven't shipped it.</p>
+<p class="author">Jack Arens</p>
+<p class="role">Lead Software Architect @ Layer</p>
+</Slide>
+
+<IntroSlides personal={true} layer={false} vertical={false} />
+
+{/* ------------------------------------------------------------------ */}
+{/* ACT 1: THE ANTI-HYPOTHESIS                                          */}
+{/* ------------------------------------------------------------------ */}
+
+<Poster tone="red" centered>
+# SaaS is dead.
+<p class="glyph">💀</p>
+
+<aside class="notes">
+- "I'm sure you've heard. SaaS is dead."
+- Poll: hands up if you work on a SaaS product. Keep it up if you're worried about it.
+</aside>
+</Poster>
+
+<Slide class="collage-slide">
+{/* Full-bleed collage of real headline screenshots. Save captures into
+    ./shots/ under these names; each lands in its slot. Crop to the
+    masthead + headline, roughly 16:10. Shots build in one by one. */}
+
+<div class="collage" data-bleed>
+	<Screenshot name="news-bloomberg" x={2} y={5} w={42} tilt={-3} hint="Bloomberg, 4 Feb 2026: What's Behind the ‘SaaSpocalypse’ Plunge in Software Stocks" />
+	<Fragment as="div"><Screenshot name="news-forbes" x={50} y={3} w={46} tilt={2} hint="Forbes, 4 Feb 2026: $300 Billion Evaporated. The SaaS-Pocalypse Has Begun." /></Fragment>
+	<Fragment as="div"><Screenshot name="news-cnn" x={20} y={29} w={40} tilt={1.5} hint="CNN, 4 Feb 2026: Anthropic's new AI tool sends shudders through software stocks" /></Fragment>
+	<Fragment as="div"><Screenshot name="news-cnbc" x={58} y={37} w={39} tilt={-2} hint="CNBC, 6 Feb 2026: AI fears pummel software stocks…" /></Fragment>
+	<Fragment as="div"><Screenshot name="news-fortune" x={1} y={54} w={42} tilt={2.5} hint="Fortune, 6 Feb 2026: Anthropic's Claude triggered a trillion-dollar selloff…" /></Fragment>
+	<Fragment as="div"><Screenshot name="news-techcrunch" x={37} y={60} w={37} tilt={-1} hint="TechCrunch, 9 Feb 2026: Databricks CEO says SaaS isn't dead, but AI will soon make it irrelevant" /></Fragment>
+	<Fragment as="div" class="collage-stamp"><span>It's all over the feed.</span></Fragment>
+</div>
+
+<aside class="notes">
+- First week of Feb 2026: Anthropic ships Claude Cowork plugins. Software loses roughly $285-300B in about two days. Jefferies traders coined "SaaSpocalypse".
+- bloomberg.com/news/articles/2026-02-04/what-s-behind-the-saaspocalypse-plunge-in-software-stocks
+- forbes.com/sites/donmuir/2026/02/04/300-billion-evaporated-the-saaspocalypse-has-begun
+- cnn.com/2026/02/04/investing/us-stocks-anthropic-software
+- cnbc.com/2026/02/06/ai-anthropic-tools-saas-software-stocks-selloff.html
+- fortune.com/2026/02/06/anthropic-claude-opus-4-6-stock-selloff-new-upgrade
+- techcrunch.com/2026/02/09/databricks-ceo-says-saas-isnt-dead-but-ai-will-soon-make-it-irrelevant
+</aside>
+</Slide>
+
+<Slide>
+## And the timeline
+
+{/* Real posts only. Save captures into ./shots/ under these names and they
+    replace the placeholders. Portrait phone crops work best. */}
+
+<div class="shots" style="--cols:4">
+	<Fragment as="div"><Screenshot name="x-ondrej" platform="x" tilt={-2} hint="David Ondrej, 4 Feb 2026: “SaaS is dead. Agents killed it.” (3.1M views) x.com/DavidOndrej1/status/2019126831761572169" /></Fragment>
+	<Fragment as="div"><Screenshot name="x-altman" platform="x" tilt={1.5} hint="Jack Altman, 6 Feb 2026: “The current consensus view is saas is dead…” x.com/jaltma/status/2019835536270324137" /></Fragment>
+	<Fragment as="div"><Screenshot name="x-nadella" platform="x" tilt={-1} hint="Nadella BG2 clip, via @rohanpaul_ai x.com/rohanpaul_ai/status/2037657914929012981" /></Fragment>
+	<Fragment as="div"><Screenshot name="linkedin-no-techdebt" platform="linkedin" tilt={2} alt="LinkedIn post by Adam Turner, CEO at Postscript: rewrote an 8-year-old codebase from scratch with AI" /></Fragment>
+</div>
+
+<aside class="notes">
+- Nadella on BG2, Dec 2024: business apps are "essentially CRUD databases with a bunch of business logic", and that's where "they'll all collapse, in the agent era". He never literally said "SaaS is dead"; the headlines did.
+- Aaron Levie (Box), Mar 2025: agents are the biggest shift to enterprise software business models, because one user has always meant one seat.
+</aside>
+</Slide>
+
+<Slide>
+## SaaS stocks, 2025–26
+
+<div class="ticker">
+	<span>IGV<b>24%</b></span>
+	<span>WDAY<b>39%</b></span>
+	<span>HUBS<b>39%</b></span>
+	<span>TEAM<b>35%</b></span>
+	<span>MNDY<b>29%</b></span>
+	<span>CRM<b>28%</b></span>
+	<span class="asof">YTD, Feb 2026 · CNBC</span>
+</div>
+
+<div class="chart" role="img" aria-label="Weekly closing prices of Salesforce, ServiceNow, Workday and Adobe indexed to 100 at January 2025, from January 2025 to the April 2026 low, with the February 2026 selloff annotated" set:html={saasStocksDecline} />
+
+<aside class="notes">
+- Four big SaaS names. Weekly closes, indexed so they all start at 100 in Jan 2025.
+- Already sliding through 2025. Then first week of Feb 2026: Anthropic ships Claude Cowork, a desktop agent with plugins for legal, finance, ops. Software stocks lose about $300B in a week. Jefferies traders called it the "SaaSpocalypse".
+- Bottom is April to June. Salesforce at about half where it started. ServiceNow, Workday similar. Adobe worst of the four.
+- Stop here. What they did next comes back after we've covered what MCP is.
+</aside>
+</Slide>
+
+
+<Poster tone="ink">
+<p class="quote"><span class="lead">What we're being told:</span> none of it is <em>worth what it costs</em> anymore.</p>
+<p class="byline"><Fragment>Mostly screens</Fragment><Fragment>{" · "}Sold by the seat</Fragment><Fragment>{" · "}Load-bearing</Fragment></p>
+
+<aside class="notes">
+- Who's in the crosshairs: software that's heavy on UI, sold on enterprise contracts, and core to the customer's workflow.
+- Mostly screens: forms, tables, dashboards. The part a model can now generate from a screenshot.
+- Sold by the seat: annual deals, priced per user. Agents don't sit in seats. (Levie, Mar 2025.)
+- Load-bearing: deep in how the customer runs. That used to be the moat.
+- Best case for the argument: if the UI costs almost nothing to build, why pay a vendor for it? And your data is in someone else's tables.
+</aside>
+</Poster>
+
+<Slide>
+## Airtable, August 2026
+
+<div class="stats" style="--cols:3">
+	<Fragment as="div"><Stat num="$11.7B" label="2021 valuation" /></Fragment>
+	<Fragment as="div"><Stat num="$2.25B" label="Equity value in the Bending Spoons deal" /></Fragment>
+	<Fragment as="div"><Stat num="−81%" label="Peak to sale" /></Fragment>
+</div>
+
+<div class="stats" style="--cols:3; margin-top:1em">
+	<Fragment as="div"><Stat num="$480M" label="ARR, still growing 20% a year" /></Fragment>
+	<Fragment as="div"><Stat num="500k" label="Organisations on it" /></Fragment>
+	<Fragment as="div"><Stat num="~$1B" label="Cash on hand at sale" /></Fragment>
+</div>
+
+<aside class="notes">
+- Airtable is the one I keep coming back to. Peak valuation $11.7B in 2021. Sold to Bending Spoons in August for about $2.25B equity value. Down 81 percent.
+- Not a failing company. $480M ARR, still growing 20 percent, half a million orgs, a billion in cash.
+- Buyers still priced it like something anyone could rebuild. Whether that's fair to Airtable, I don't know. But that's the read the market put on a flexible-database-with-a-UI in 2026.
+- I'm not going to compare Layer to Airtable. Different business. But the question the market asked them is the one I had to answer.
+</aside>
+</Slide>
+
+
+<Slide>
+## The question I had to answer
+
+<ul>
+	<Fragment as="li">Layer is a flexible database with a UI on top. Exactly what people say they're vibe-coding now.</Fragment>
+	<Fragment as="li">So: if someone can rebuild our UI in a weekend, what are customers paying for?</Fragment>
+	<Fragment as="li">The rest of this talk is my answer.</Fragment>
+</ul>
+
+<aside class="notes">
+- <span class="todo">[who asked: board, team, customer?]</span>
+</aside>
+</Slide>
+
+{/* ------------------------------------------------------------------ */}
+{/* ACT 2: THE HYPOTHESIS                                               */}
+{/* ------------------------------------------------------------------ */}
+
+<Poster tone="teal">
+<p class="eyebrow">My hypothesis</p>
+<p class="quote">How people use our software will change. The value it provides <em>hasn't gone away</em>, and it isn't going to.</p>
+
+<aside class="notes">
+- Investors assumed the UI is what customers pay for. The UI is the part AI just made cheap. So the math says software is worth less.
+- I think that first assumption is wrong. Two reasons.
+</aside>
+</Poster>
+
+<Slide>
+## Two reasons I believe it
+
+<div class="cards stacked" style="--cols:1; gap:0.8em">
+	<Fragment as="div"><Card>
+		<span class="idx">01</span>
+		<h3>Replacing it isn't feasible</h3>
+		<p>For most companies, rebuilding a vendor in-house costs more time, people and money than they have.</p>
+	</Card></Fragment>
+	<Fragment as="div"><Card>
+		<span class="idx">02</span>
+		<h3>Good products hold their value</h3>
+		<p>Software that does one job very well contains years of design decisions honed by user feedback.</p>
+	</Card></Fragment>
+</div>
+</Slide>
+
+<Slide>
+## 01 · Who can actually replace it?
+
+<div class="spectrum">
+	<Fragment as="div" class="band">
+		<h3>Small shops</h3>
+	</Fragment>
+	<Fragment as="div" class="band hot">
+		<h3>Everyone in the middle</h3>
+	</Fragment>
+	<Fragment as="div" class="band">
+		<h3>Enterprise</h3>
+	</Fragment>
+</div>
+<div class="spectrum-axis"><span>10 people</span><span>company size</span><span>10,000 people</span></div>
+
+<Fragment as="p" class="statement" style="font-size:1.1em; margin-top:1.2em">Building it is the cheap part. <em>Owning it</em> is not.</Fragment>
+
+<aside class="notes">
+- Very small businesses do okay with one-off AI solutions. Very large ones have the resources, and sometimes the financial reasons, to bring it in-house.
+- The average company doesn't have the time or the money to replace a product that works well. Building it is the cheap part. Owning it is not.
+</aside>
+</Slide>
+
+<Slide>
+## 02 · What a good product holds
+
+<div class="cards" style="--cols:3">
+	<Fragment as="div" index={0}><Card kicker="On top" title="The UI" class="ringable">
+		<p>Screens, forms, tables. A model can generate a decent version from a screenshot.</p>
+		<Fragment class="ring-tag" index={3}>“Rebuilt it in a weekend”</Fragment>
+	</Card></Fragment>
+	<Fragment as="div" index={1}><Card kicker="Underneath" title="Data model &amp; rules">
+		<p>What happens when you delete something others point at. Computed values. Who sees what. Every bug a customer ever reported.</p>
+	</Card></Fragment>
+	<Fragment as="div" index={2}><Card kicker="Around it" title="Customer workflows">
+		<p>The Tuesday report. The closeout checklist. How the field team names things. None of it is in our code.</p>
+	</Card></Fragment>
+</div>
+
+<aside class="notes">
+- The UI is the part a screenshot shows. That's what got cheap.
+- The data model is what your code knows about the domain. It took years and it came from customers. The delete case alone is a week of edge cases.
+- Workflows aren't even in your code. It's how the customer set the tool up and trained their team. Moving off means redoing all of that.
+</aside>
+</Slide>
+
+<Slide>
+## What I'll concede
+
+<ul>
+	<Fragment as="li">This will hurt some software. How much depends on your industry.</Fragment>
+	<Fragment as="li">Interfaces will get built differently. Some won't get built at all.</Fragment>
+	<Fragment as="li">Not every company makes it through this.</Fragment>
+</ul>
+
+<Fragment as="p" class="statement" style="font-size:1.15em; margin-top:0.9em">But the opportunity is <em>across the board</em>.</Fragment>
+</Slide>
+
+<Poster tone="ink">
+<p class="quote">The same AI pointed at SaaS can do a lot of work <em>for</em> us. It's on us to recognize the value we have, and act on it.</p>
+</Poster>
+
+{/* ------------------------------------------------------------------ */}
+{/* ACT 4: MCP, BRIEFLY                                                 */}
+{/* ------------------------------------------------------------------ */}
+
+<Slide class="section-header">
+<p class="eyebrow">Part one · the plumbing</p>
+## What an agent needs to reach it
+</Slide>
+
+<Slide>
+## Our public API
+
+```http
+POST /projects/{projectId}/elements/bulk
+Authorization: Bearer <token>
+
+{
+  "categoryId": "C1",
+  "elements": [
+    {
+      "name": "Door A-104",
+      "fields": {
+        "fld_rating": { "value": "90 min" }
+      }
+    }
+  ]
+}
+```
+
+<Fragment as="div">
+	<ul>
+		<li>A developer with a token write a body and send it away</li>
+		<li>Claude or ChatGPT can't use it unless someone runs a script they write</li>
+	</ul>
+</Fragment>
+</Slide>
+
+<Slide>
+## It's all documented
+
+<div class="docs-frame">
+	<Screenshot name="docs-createelements" platform="phone" class="browser" alt="Layer API reference page for Bulk Create Elements on docs.layer.team" />
+	<div>
+		<div class="stats docs-stats" style="--cols:2; gap:0.6em">
+			<Fragment as="div"><Stat num="41" label="Operations in the OpenAPI spec" /></Fragment>
+			<Fragment as="div"><Stat num="3.4 MB" label="Of spec. Every schema inlined." /></Fragment>
+		</div>
+		<ul class="docs-points">
+			<Fragment as="li">Easy to script against, for a developer or an agent with a shell.</Fragment>
+			<Fragment as="li">Needs a runtime: a token, an HTTP client, and <strong>somewhere to run code.</strong></Fragment>
+		</ul>
+	</div>
+</div>
+
+<aside class="notes">
+- docs.layer.team: ReadMe, generated from apps/api/openapi.json. 24 paths, 41 operations, ~65k lines.
+- The BIM technologist can click around here. They aren't going to write a Python script against it.
+</aside>
+</Slide>
+
+<Slide>
+## What MCP is, quickly
+
+<ul>
+	<Fragment as="li">Model Context Protocol. Open spec, Anthropic published it Nov 2024. OpenAI, Google, Cursor, Salesforce, Stripe all adopted it.</Fragment>
+	<Fragment as="li">JSON-RPC. Runs over stdio locally or HTTP remotely.</Fragment>
+	<Fragment as="li">Client (Claude Desktop, Cursor) connects to your server and asks what it offers.</Fragment>
+	<Fragment as="li">Model decides what to call. Client runs the call, hands the result back.</Fragment>
+</ul>
+</Slide>
+
+{/* The stock chart again, now with the MCP launches that answered the selloff. */}
+<Slide>
+## SaaS stocks, 2025–26
+
+<div class="ticker">
+	<span>IGV<b>24%</b></span>
+	<span>WDAY<b>39%</b></span>
+	<span>HUBS<b>39%</b></span>
+	<span>TEAM<b>35%</b></span>
+	<span>MNDY<b>29%</b></span>
+	<span>CRM<b>28%</b></span>
+	<span class="asof">YTD, Feb 2026 · CNBC</span>
+</div>
+
+{/* Opens on the decline chart; one click wipes in the recovery and the
+    MCP launches from the April low onward. */}
+<div class="chart chart-stack" role="img" aria-label="Weekly closing prices of Salesforce, ServiceNow, Workday and Adobe indexed to 100 at January 2025, with the February 2026 selloff and MCP launches annotated">
+	<div class="chart-base" set:html={saasStocksDecline} />
+	<Fragment as="div" class="custom chart-uptick"><div set:html={saasStocks} /></Fragment>
+</div>
+
+<aside class="notes">
+- Four big SaaS names. Weekly closes, indexed so they all start at 100 in Jan 2025.
+- Already sliding through 2025. Then first week of Feb 2026: Anthropic ships Claude Cowork, a desktop agent with plugins for legal, finance, ops. Software stocks lose about $300B in a week. Jefferies traders called it the "SaaSpocalypse".
+- Bottom is April to June. Salesforce at about half where it started. ServiceNow, Workday similar. Adobe worst of the four.
+- Then look at the dashed lines. April: Salesforce hosted MCP servers go GA. July: Headless 360 MCP beta. Stripe shipped theirs in April too. Every one of these companies answered the same way: expose the product to agents.
+- Partial recovery since. Still down 25 to 40 percent. Point isn't "MCP fixed the stock". Point is: the companies that got hit went straight to "let the agent in".
+</aside>
+</Slide>
+
+<Slide>
+## What it looks like on the wire
+
+<div class="two-column">
+<div>
+
+```json
+// tools/list → one of 43
+{
+  "name": "searchElements",
+  "description": "Filter elements in a project …",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "projectId": { "type": "string" },
+      "filter":    { "$ref": "#/…/Filter" }
+    },
+    "required": ["projectId"]
+  }
+}
+```
+
+</div>
+<div>
+
+```json
+// tools/call
+{
+  "name": "searchElements",
+  "arguments": {
+    "projectId": "P1",
+    "filter": {
+      "field": "Fire Rating",
+      "op": "equals",
+      "value": "90 min"
+    }
+  }
+}
+```
+
+</div>
+</div>
+
+<Fragment as="p" class="note">A function name and a JSON schema. That's most of the protocol.</Fragment>
+</Slide>
+
+<Slide>
+## Three things a server offers
+
+<div class="cards" style="--cols:3">
+	<Fragment as="div"><Card kicker="Tools" title="Things the agent can do">
+		<p><code>createProject</code>, <code>searchElements</code>, <code>batchActions</code>. Name, description, typed input. Usually one per endpoint.</p>
+	</Card></Fragment>
+	<Fragment as="div"><Card kicker="Resources" title="Things the agent can read">
+		<p><code>layer://docs/field-types</code>, <code>layer://schema/&#123;projectId&#125;</code>. Our existing docs, served as text the agent can fetch.</p>
+	</Card></Fragment>
+	<Fragment as="div"><Card kicker="Prompts" title="Ways to start">
+		<p><code>project-setup-wizard</code>. A starter prompt for new-project setup, based on our onboarding guides.</p>
+	</Card></Fragment>
+</div>
+
+<Fragment as="p" class="note">Works in any platform that supports MCP*</Fragment>
+</Slide>
+
+<Slide>
+## Why an API maps onto this
+
+<table class="map">
+	<thead>
+		<tr><th>REST API</th><th>MCP</th><th></th></tr>
+	</thead>
+	<tbody>
+		<Fragment as="tr"><td>Endpoint</td><td>tool</td><td>one to one, mostly</td></Fragment>
+		<Fragment as="tr"><td>Request body schema</td><td>inputSchema</td><td>same JSON Schema</td></Fragment>
+		<Fragment as="tr"><td>Bearer token</td><td>same token, forwarded</td><td>same permissions</td></Fragment>
+		<Fragment as="tr"><td>API docs</td><td>description + resources</td><td>same text, different reader</td></Fragment>
+		<Fragment as="tr"><td>Onboarding guides</td><td>prompt</td><td>no REST equivalent</td></Fragment>
+	</tbody>
+</table>
+</Slide>
+
+<Slide>
+## Why not just hand the model our OpenAPI spec?
+
+<ul>
+	<Fragment as="li">Most of our users don't have a runtime to call an API from</Fragment>
+	<Fragment as="li">With MCP, the agent borrows someone else's UI</Fragment>
+	<Fragment as="li">Every vendor has its own function-calling format</Fragment>
+	<Fragment as="li">We run the server and handle sign-in</Fragment>
+	<Fragment as="li">Resources and prompts have no OpenAPI equivalent</Fragment>
+</ul>
+</Slide>
+
+<Poster tone="teal">
+<p class="eyebrow">Where this is going</p>
+## If you have a decent REST API, most of the MCP work is already done.
+</Poster>
+
+{/* ------------------------------------------------------------------ */}
+{/* WHAT WE BUILT                                                       */}
+{/* ------------------------------------------------------------------ */}
+
+<Slide class="section-header">
+<p class="eyebrow">Part two · implementation</p>
+## How we built ours at Layer
+</Slide>
+
+<Slide>
+## Request path
+
+<div class="cards flow" style="--cols:5; gap:0.4em; align-items:stretch">
+	<Fragment as="div"><Card kicker="Client" title="Claude / Cursor"><p>Holds the OAuth token</p></Card></Fragment>
+	<Fragment as="div"><Card kicker="MCP" title="Fastify at /mcp"><p>One service, next to the API</p></Card></Fragment>
+	<Fragment as="div"><Card kicker="Tool" title="handler"><p>Reshape args, call the client</p></Card></Fragment>
+	<Fragment as="div"><Card kicker="REST" title="Layer API"><p><code>api.layer.<wbr />team</code>, user's token forwarded</p></Card></Fragment>
+	<Fragment as="div"><Card kicker="DB" title="Firestore"><p>Same rules as the app</p></Card></Fragment>
+</div>
+
+<Fragment as="div">
+	<ul>
+		<li>No second business-logic layer. No service account.</li>
+		<li>Anything the user can't do in the UI, the agent can't do either. *</li>
+	</ul>
+</Fragment>
+</Slide>
+
+<Slide>
+## The shape of it
+
+<div class="two-column">
+<div>
+	<ul>
+		<Fragment as="li">Streamable HTTP at <code>/mcp</code>, Server Sent Events (SSE) fallback</Fragment>
+		<Fragment as="li">OAuth 2.1 with dynamic client registration, or a plain API token</Fragment>
+		<Fragment as="li">Tool input schemas are the API's TypeBox schemas, so tool and route stay in sync</Fragment>
+	</ul>
+</div>
+<div>
+	<ul>
+		<Fragment as="li">43 tools, 13 resources, 3 prompts</Fragment>
+		<Fragment as="li">15k lines of server, 7k of tests. Plus ~350 KB of English written for the agent. <strong>Almost half of what we wrote is prose.</strong></Fragment>
+	</ul>
+</div>
+</div>
+
+<aside class="notes">
+- Measured 28 Sep with the TypeScript AST, specs excluded.
+- Inside apps/mcp/src: 76 KB of prose strings (tool and parameter descriptions, server instructions, prompts). About 14% of the server's source, 20% of the tool files.
+- Outside it: 141 KB of ai-context markdown (overview, field types, formula and document guides) and 137 KB of .blockDoc.ts, one per document block.
+- About 354 KB of prose against about 470 KB of code. Roughly 43%.
+</aside>
+</Slide>
+
+<Slide>
+## Most tools look like this
+
+```ts
+defineProjectTool(token, db, {
+  name: 'applyTemplate',
+  description: `Calls POST /projects/{projectId}/apply-template.
+    Applies a template to an existing project, copying its
+    categories and fields. Call listTemplates first to
+    resolve the templateId.`,
+  inputSchema: Type.Object({
+    projectId: ProjectIdParamsSchema.properties.projectId,
+    body: ApplyTemplateBodySchema,   // same schema as the REST route
+  }),
+  handler: ({ projectId, body }) =>
+    client.applyTemplate(projectId, body),
+});
+```
+
+<Fragment as="p" class="note">Usually one tool per endpoint. The input schema is the same TypeBox schema behind our OpenAPI spec.</Fragment>
+</Slide>
+
+<Slide class="code-only">
+## One schema, three consumers
+
+<div class="starred">
+
+```ts
+// libs/shared/server-utils/…/schemas/project.schema.ts
+export const ApplyTemplateBodySchema = Type.Object({
+  confirm: Type.Optional(
+    Type.Boolean({
+      description: 'Set to true to confirm re-applying a template…',
+    }),
+  ),
+  templateId: Type.String({ description: 'ID of the template to apply' }),
+});
+
+// apps/api: the REST route validates with it, and it lands in openapi.json
+fastify.post('/projects/:projectId/apply-template', {
+  schema: { body: ApplyTemplateBodySchema, operationId: 'applyTemplateToProject' },
+}, handler);
+
+// apps/mcp: the tool advertises the same object as its inputSchema
+inputSchema: Type.Object({ projectId, body: ApplyTemplateBodySchema }),
+```
+
+<Fragment class="custom gold-star" data-bleed><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.8l3.1 6.6 7.2.9-5.3 5 1.4 7.1L12 17.9l-6.4 3.5 1.4-7.1-5.3-5 7.2-.9z"/></svg></Fragment>
+</div>
+
+<aside class="notes">
+- TypeBox builds plain JSON Schema objects with TypeScript types attached.
+- One definition: Fastify validates requests with it, the OpenAPI generator documents it, and the MCP tool hands it to the model.
+- Change a field and all three move together. No drift between docs, API and tool.
+- Route excerpt trimmed; the real one also declares params, responses and auth.
+</aside>
+</Slide>
+
+<Slide>
+## Resources are just files
+
+```ts
+// libs/shared/utils/src/lib/ai-context/
+layer-overview.md        // Layer 101 for AI
+field-types.md           // all 29, when to use each
+category-guide.md        // naming, when to split
+formula-v2-guide.md      // the formula AST
+view-filter-guide.md     // 37 clauses
+document-view-guide.md   // the doc editor block tree
+
+// served as layer://docs/overview, layer://docs/field-types, …
+```
+
+<Fragment as="div">
+	<ul>
+		<li>Same markdown we'd use as product documentation</li>
+		<li>Tool descriptions say "read <code>layer://docs/formula-v2-guide</code> before writing a formula"</li>
+	</ul>
+</Fragment>
+</Slide>
+
+<Slide>
+## Prompts are the onboarding call
+
+```ts
+// apps/mcp/src/prompts.ts (trimmed)
+{
+  name: 'explain-project-structure',
+  arguments: [{ name: 'projectId', required: true }],
+  buildMessages: ({ projectId }) => [
+    createTextPromptMessage(
+      `Read layer://schema/${projectId} and explain the
+       current project structure in plain language…`),
+  ],
+}
+```
+
+<Fragment as="div">
+	<ul>
+		<li>User picks one from a menu. Our server writes the opening message.</li>
+		<li>Three so far: <code>project-setup-wizard</code>, <code>field-selection-guide</code>, <code>explain-project-structure</code>.</li>
+	</ul>
+</Fragment>
+
+<aside class="notes">
+- Tools are what the agent can do, resources are what it can read, prompts are how a conversation starts.
+- The setup wizard is our onboarding call written down: about 1,000 words on how to interview a customer about their domain before creating anything. We'll see it in example 01.
+- Excerpt lightly trimmed: the real code reads projectId through getRequiredArgument and uses named constants.
+</aside>
+</Slide>
+
+{/* ------------------------------------------------------------------ */}
+{/* ACT 5: FOUR EXAMPLES                                                */}
+{/* ------------------------------------------------------------------ */}
+
+<Slide class="section-header">
+<p class="eyebrow">Part three · real world</p>
+## Real-world examples
+</Slide>
+
+<Slide>
+## Who we build for
+
+<div class="cards" style="--cols:3">
+	<Fragment as="div"><Card kicker="The firm" title="AEC Professionals">
+		<p>Architects, owners, contractors. Building data that used to live in spreadsheets.</p>
+	</Card></Fragment>
+	<Fragment as="div"><Card kicker="The champion" title="The BIM technologist">
+		<p>The person who's good with computers. Sets up Layer for everyone else, and owns it when it changes.</p>
+	</Card></Fragment>
+	<Fragment as="div"><Card kicker="Everyone else" title="The team">
+		<p>PMs, designers, the field. They open a project someone else configured and get to work.</p>
+	</Card></Fragment>
+</div>
+
+<Fragment as="p" class="statement" style="font-size:1.1em; margin-top:1em">Our product lives or dies on <em>one person's setup</em>.</Fragment>
+</Slide>
+
+<Slide>
+## Four jobs, one champion
+
+<div class="cards" style="--cols:4; gap:0.5em">
+	<Fragment as="div"><Card><span class="idx">01</span><h3>Set up a project</h3><p>Categories, fields, links, views. Before anyone else can start.</p></Card></Fragment>
+	<Fragment as="div"><Card><span class="idx">02</span><h3>Write formulas and Relationships</h3><p>Computed fields across linked records.</p></Card></Fragment>
+	<Fragment as="div"><Card><span class="idx">03</span><h3>Build documents</h3><p>Schedules and reports laid out for print.</p></Card></Fragment>
+	<Fragment as="div"><Card><span class="idx">04</span><h3>Move projects forward</h3><p>Migrate old projects onto newer structures.</p></Card></Fragment>
+</div>
+
+<Fragment as="p" class="note">Each one is a reason we built an MCP server on top of the API. We'll do all four, live-ish, on staging.</Fragment>
+</Slide>
+
+{/* ---------- Example 01: project setup ---------- */}
+
+<Slide class="section-header">
+<p class="eyebrow">Example 01</p>
+## Setting up a project
+<p class="lede">Turn a firm's domain into categories, fields and links, before anyone else can start.</p>
+</Slide>
+
+<Poster tone="amber">
+<p class="eyebrow">Demo 01 · staging</p>
+# Set me up.
+<p>“I'm the BIM lead on a clinic fit-out. Rooms, FF&amp;E, punch items. Interview me first.”</p>
+
+<aside class="notes">
+1. Paste the prompt. Claude reads layer://prompts/project-setup-wizard plus overview, category-guide, field-types. Asks domain questions.
+2. Answer briefly. It calls listTemplates, proposes categories, fields, relatedV2 links. Waits for approval.
+3. Approve. createProject, then one batchActions with $step refs: categories, field groups, fields, seed rows.
+4. Layer app: categories, grouped fields, the reverse relatedV2 field showing up a few seconds later.
+5. Optional: getProjectSchema as a recap.
+- Staging may be one tool behind HEAD (listLayerTemplates landed 28 Sep). Rehearse.
+- Point out while it runs: batchActions refs like $step:0 mean it never round-trips to look up IDs. 13 kinds of write per batch. Layer adds the reverse relatedV2 link on its own.
+- Server instructions tell every client to read the wizard before createProject.
+</aside>
+</Poster>
+
+{/* ---------- Example 02: formulas ---------- */}
+
+<Slide class="section-header">
+<p class="eyebrow">Example 02</p>
+## Formulas
+<p class="lede">Computed values across linked records. The champion writes them; everyone else trusts them.</p>
+</Slide>
+
+{/* Near full-screen: a real formula from the Layer formula editor. */}
+<Slide class="image-slide" data-background-color="#ffffff">
+<Image src={complexFormula} alt="Layer formula editor showing a large node graph: FILTEREQUAL, MATRIXMULTIPLY, SUM and COUNTNOTEMPTY nodes over FF&E items and unit costs, producing “Pricing incomplete — required items are unpriced.”" widths={[1600, 2800, 4000]} sizes="100vw" quality={90} />
+
+<aside class="notes">
+- A real formula from the editor: a graph of typed nodes, not a string. Room area against target, with a tolerance, rendered to a status label.
+- Why it's hard: 110 functions with typed signatures, 5 node types. From our own guide: declare the wrong fieldType and it type-checks, then produces nothing.
+- The server checks shape, graph (dangling refs, cycles), types, then output type. A failure lists every problem by node id, so the agent fixes it and retries.
+- Shipped Aug 2026 with GET /formula-functions, generated from the engine registry so docs can't drift.
+</aside>
+</Slide>
+
+<Poster tone="amber">
+<p class="eyebrow">Demo 02 · staging</p>
+# Add it up.
+<p>“On Rooms, add Total FF&amp;E Cost: sum Cost across each room's furniture, as USD.”</p>
+
+<aside class="notes">
+1. Claude calls getProjectSchema, reads formula-v2-guide and formula-functions.
+2. createField with fieldType formulaV2 and advanced.formula: field → field → sum.
+3. Optional: ask for something ill-typed. Server returns 400 naming the node. Claude fixes and retries.
+4. Layer app: Rooms, the computed column (fills in async). Open the formula editor: the same graph a human would have built by hand.
+- Candidate project: "FormulaV2 Demo Project" (AjeqCpLdThm1uqaEbVMX), or the one from demo 1.
+</aside>
+</Poster>
+
+{/* ---------- Example 03: document views ---------- */}
+
+<Slide class="section-header">
+<p class="eyebrow">Example 03</p>
+## Document views
+<p class="lede">Schedules, data sheets and reports, laid out for print from live project data.</p>
+</Slide>
+
+<Slide>
+## One tree, a few rules
+
+<ul>
+	<Fragment as="li">UI built on drag-and-drop library - powerful but picky</Fragment>
+	<Fragment as="li">The full block reference is ~29k tokens, so we broke it up</Fragment>
+	<Fragment as="li">Read only the blocks needed:<ul class="sublist"><li><code>layer://docs/document-view-blocks/Header</code></li><li><code>layer://docs/document-view-blocks/FieldsTable</code></li><li><code>layer://docs/document-view-blocks/Footer</code></li><li><code>layer://docs/document-view-blocks/PageNumber</code></li></ul></Fragment>
+</ul>
+
+{/* Last click: the real builder UI pops up over the slide as an example. */}
+<Fragment as="div" class="custom shot-overlay" data-bleed>
+	<Image src={documentViewBuilder} alt="Layer document view builder: a Pokédex entry page for Bulbasaur with header, field tables, stat tables and sprite images, next to the block palette (containers, header, footer, static blocks)" widths={[1600, 2800]} sizes="90vw" quality={90} />
+</Fragment>
+<aside class="notes">
+- Why it's hard: 37 block types, 5 document shapes, 80-200 nodes in an assessment report. A layout pointing at a deleted field saves cleanly and renders blank.
+- Safe to let it try: the server validates the tree before saving, and every write is a new version in the view's history. "Nothing is lost, so iterating across several updates is safe."
+- Document view API shipped Aug 2026: GET /document-view-blocks, validateEditorState, a .blockDoc.ts beside every block.
+</aside>
+</Slide>
+
+<Poster tone="amber">
+<p class="eyebrow">Demo 03 · staging</p>
+# Print it.
+<p>“One page per room: header with project and date, room fields in a table, related FF&amp;E, page numbers.”</p>
+
+<aside class="notes">
+1. Claude reads document-view-guide, then document-view-blocks/Header,FieldsTable,RelatedElementsField,Footer,PageNumber.
+2. createCategoryView: viewType DOCUMENT, elementsMode SINGLE_ELEMENT, letter-size editorState.
+3. Layer app: open the view, page through rooms, export PDF.
+4. Revise: "move the photo beside the table, landscape". getCategoryView → updateCategoryView. Show version history.
+- Candidate: "Room Data Sheets + Matrix R&D" (idE2HiKe11zZn6M4WlZV), or the demo 1 project.
+</aside>
+</Poster>
+
+{/* ---------- Example 04: project transitions ---------- */}
+
+<Slide class="section-header">
+<p class="eyebrow">Example 04</p>
+## Moving projects forward
+<p class="lede">Old projects on old structures. Bring them up to date without losing a single value.</p>
+</Slide>
+
+<Slide>
+## Before: a developer and a script
+
+```ts
+// apps/layer-functions/admin_scripts/migrate-related-to-relatedV2.ts
+const PROJECT_ID = '';
+const FIELD_IDS: string[] = [];
+const ARCHIVE_OLD_RELATED_FIELDS = false;
+const PAGE_SIZE = 250;
+```
+
+<Fragment as="div">
+	<ul>
+		<li>About 20 <code>migrate-*</code> scripts like this. Each one a ticket for our team.</li>
+		<li>After: the champion asks, the agent composes ordinary tools, and every write goes through the API as them.</li>
+	</ul>
+</Fragment>
+<aside class="notes">
+- A field's type can't change. So a migration is: create the new field, copy every value, repoint formulas, lookups and document blocks, archive the old field.
+- Old projects still mix v1 related and formula with their v2 replacements. Our docs tell agents to recognise old patterns and never write them.
+</aside>
+</Slide>
+
+{/* Full screen on Slack's own background (#1a1d21) so the edges disappear. */}
+<Slide class="image-slide" data-background-color="#1a1d21">
+<Image src={slackInterrogation} alt="Slack DM: Jack posts an interrogation still from The Matrix with “You wanna tell us what you're doing on staging?”; Mike Lee replies “did i break something?”, Jack says “Not yet”, Mike says “i was putting one of my sample projects there.”" widths={[1600, 2800, 3400]} sizes="100vw" quality={90} />
+</Slide>
+
+<Poster tone="amber">
+<p class="eyebrow">Demo 04 · staging</p>
+# Bring it forward.
+<p>“What's outdated here? Promote Trade Assigned To into a Trades category and keep every value.”</p>
+
+<aside class="notes">
+- Duplicate "Punch List Template" (N6Aome60k4gB6MDAzYuU) first. One category, Punch List Issues, 7 fields; Person/Trade Assigned To are plain selects.
+1. explain-project-structure / getProjectSchema. Claude flags selects standing in for a person and a trade link.
+2. One batchActions: createCategory Trades, createElement per option, createField relatedV2 with $step refs.
+3. listElements, then updateElement per issue to set the link. Many links to one parent: sequential calls (batch can drop links, last writer wins).
+4. updateCategory fieldConfig puts the new field where the old one sat. deleteField archives the old select after approval.
+5. Layer app: Trades category, reverse field on each trade, issue counts.
+- Don't rely on v1 related read/write through MCP without rehearsing.
+</aside>
+</Poster>
+
+<Slide>
+## What you just saw
+
+<ul>
+	<Fragment as="li">Zero Layer-specific code in the client.</Fragment>
+	<Fragment as="li">It read our docs before it wrote anything.</Fragment>
+	<Fragment as="li">Every write went through the same API the app uses, as me.</Fragment>
+	<Fragment as="li">Four jobs that used to need the champion, or us. The chat window was the UI.</Fragment>
+</ul>
+</Slide>
+
+{/* ------------------------------------------------------------------ */}
+{/* BRING YOUR OWN API                                                  */}
+{/* ------------------------------------------------------------------ */}
+
+<Slide class="section-header">
+<p class="eyebrow">Your turn</p>
+## Bring your own API
+</Slide>
+
+<Slide>
+## Things to check on Monday
+
+<ol style="font-size:0.9em">
+	<Fragment as="li"><strong>Is each type defined once, as JSON Schema?</strong> Zod, Pydantic, TypeBox and OpenAPI</Fragment>
+	<Fragment as="li">Do its fields carry descriptions, enums and examples?</Fragment>
+	<Fragment as="li">Can a new caller discover what exists in one call?</Fragment>
+	<Fragment as="li">Are writes plain objects or nested/deep unions?</Fragment>
+	<Fragment as="li">Do errors name the field and the fix, so callers can retry?</Fragment>
+	<Fragment as="li">Where do your production docs live? Can MCP resources serve that same source, or are you porting a copy that will drift?</Fragment>
+</ol>
+
+<aside class="notes">
+- The big one first: if your types already live in one JSON Schema definition, the MCP tool definition is mostly done. Same object validates requests, documents the API and tells the model what to send (the "one schema, three consumers" slide).
+- Descriptions are the prompt. A field called "type" with no description is a coin flip.
+- Discovery: one call that returns the shape of the account or workspace saves the agent twenty list calls.
+- Plain objects over nested oneOf/anyOf: models handle flat bodies far better.
+- Errors: name the field and the problem. The agent retries; a bare 400 ends the conversation.
+- Docs: if they live in a CMS or a help centre, an MCP resource either fetches them from there or you end up with a second copy. Copies drift. Ours: the API reference is generated from openapi.json, and the agent guides are markdown in the repo, served as MCP resources.
+- While you're in there: "configure this in the app" tells an agent the API can't, even when it can.
+</aside>
+</Slide>
+
+<Slide>
+## Then ship it
+
+<div class="cards" style="--cols:3">
+	<Fragment as="div"><Card kicker="Week 1" title="Wrap endpoints">
+		<p>One tool per endpoint. Reuse the schemas behind your OpenAPI spec. Forward the caller's token. Don't invent auth.</p>
+	</Card></Fragment>
+	<Fragment as="div"><Card kicker="Week 2" title="Add docs and prompts">
+		<p>Existing docs behind resources. Your onboarding guide as a prompt.</p>
+	</Card></Fragment>
+	<Fragment as="div"><Card kicker="Week 3+" title="Fix what breaks">
+		<p>Read the transcripts where it fails. Fix the API, not just the tool description. <strong>Loop It</strong></p>
+	</Card></Fragment>
+</div>
+</Slide>
+
+<Slide>
+## Where I've landed
+
+<ul>
+	<Fragment as="li">How people use our products is changing. The value underneath isn't.</Fragment>
+	<Fragment as="li">An MCP server is the cheapest way to put that value in front of an agent.</Fragment>
+	<Fragment as="li">Building one has actually made our API usable (and surfaced a few bugs).</Fragment>
+	<Fragment as="li">Most of the work was already done. We just hadn't shipped it.</Fragment>
+</ul>
+</Slide>
+
+{/* Finale: click 1 strikes "SaaS is dead.", click 2 wipes the teal
+    "Long live SaaS." panel in over it. */}
+<Poster tone="red" centered class="finale">
+<h1 class="dead">SaaS is dead.</h1>
+<p class="glyph">💀</p>
+<Fragment class="custom strike-go" />
+<Fragment as="div" class="custom takeover" data-bleed>
+	<p class="was">SaaS is dead.</p>
+	<h1>Long live SaaS.</h1>
+	<p class="glyph">👑</p>
+</Fragment>
+</Poster>
+
+{/* ------------------------------------------------------------------ */}
+{/* CLOSE                                                               */}
+{/* ------------------------------------------------------------------ */}
+
+<Slide class="section-header">
+<p class="eyebrow">Thanks</p>
+## Questions?
+
+<p class="muted" style="font-size:0.7em;margin-top:0.6em">Slides &amp; write-up: jackarens.com</p>
+</Slide>
+
+<Slide>
+## Resources
+
+<ul style="font-size:0.85em">
+	<li>[Model Context Protocol](https://modelcontextprotocol.io) — spec, SDKs, registry</li>
+	<li>[Layer API docs](https://layer-api.readme.io) — the REST surface the server wraps</li>
+	<li>[Salesforce Headless 360 MCP](https://developer.salesforce.com/blogs/2026/07/announcing-the-headless-360-mcp-server-beta), [Stripe MCP](https://stripe.com/blog/everything-we-announced-at-sessions-2026)</li>
+	<li>[The 2026 SaaS Crash: It's Not What You Think](https://www.saastr.com/the-2026-saas-crash-its-not-what-you-think/) — SaaStr</li>
+	<li>[Bending Spoons to buy Airtable](https://techcrunch.com/2026/08/04/bending-spoons-to-buy-airtable-for-1-28b/) — TechCrunch</li>
+</ul>
+</Slide>

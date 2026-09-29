@@ -4,6 +4,7 @@ import ThemeProvider from "@/components/ThemeProvider.astro";
 import { siteConfig } from "@/site.config";
 import type { SiteMeta } from "@/types";
 import "@/styles/slides.css";
+import "@/styles/slides-keynote.css";
 
 interface Props {
 	/**
@@ -19,22 +20,52 @@ interface Props {
 	 */
 	baseFontSize?: number | undefined;
 	meta: SiteMeta;
+	/**
+	 * Visual theme. "code" is the original monospace look. "keynote" swaps in
+	 * display type, a dark canvas and poster slides; see slides-keynote.css.
+	 */
+	theme?: "code" | "keynote" | undefined;
 }
 
 const {
 	baseFontSize = 32,
+	theme = "code",
 	meta: { description = siteConfig.description, ogImage, title },
 } = Astro.props;
 ---
 
-<html class="scroll-smooth" lang={siteConfig.lang}>
+<html
+	class="scroll-smooth"
+	lang={siteConfig.lang}
+	data-theme={theme === "keynote" ? "dark" : undefined}
+>
 	<head>
 		<BaseHead description={description} ogImage={ogImage} title={title} />
 		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css" />
+		{
+			theme === "keynote" && (
+				<>
+					<link rel="preconnect" href="https://fonts.googleapis.com" />
+					<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+					<link
+						rel="stylesheet"
+						href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600&display=swap"
+					/>
+				</>
+			)
+		}
 	</head>
 	<body>
-		<ThemeProvider />
-		<div class="reveal" style={`--slide-base-font-size: ${baseFontSize}px;`}>
+		{/* The keynote theme is dark by design: pin data-theme so code blocks
+		    pick their dark palette regardless of the visitor's site preference. */}
+		{theme === "keynote" ? (
+			<script is:inline>
+				document.documentElement.setAttribute("data-theme", "dark");
+			</script>
+		) : (
+			<ThemeProvider />
+		)}
+		<div class={`reveal theme-${theme}`} style={`--slide-base-font-size: ${baseFontSize}px;`}>
 			<div class="slides">
 				<slot />
 			</div>
@@ -44,6 +75,22 @@ const {
 			import Reveal from "reveal.js";
 
 			document.addEventListener("DOMContentLoaded", () => {
+				/**
+				 * `?aspect=4:3` narrows the canvas to 960x720 for a 4:3
+				 * projector. Height stays put, so vertical fit is unchanged and
+				 * the overflow guard catches anything that no longer fits across.
+				 */
+				const narrow = new URLSearchParams(location.search).get("aspect") === "4:3";
+				const canvasWidth = narrow ? 960 : 1280;
+				if (narrow) {
+					// Lines wrap sooner on the narrower canvas; shrink type a touch
+					// so text-heavy slides keep the same number of rows.
+					const root = document.querySelector<HTMLElement>(".reveal");
+					root?.classList.add("aspect-43");
+					const base = parseFloat(root?.style.getPropertyValue("--slide-base-font-size") ?? "");
+					if (root && base) root.style.setProperty("--slide-base-font-size", `${base * 0.9}px`);
+				}
+
 				const deck = new Reveal({
 					hash: true,
 					slideNumber: true,
@@ -63,9 +110,12 @@ const {
 					 * resolution. A deck laid out on a 1600px-tall display then
 					 * runs off the bottom of a 768px-tall projector.
 					 */
-					width: 1280,
+					width: canvasWidth,
 					height: 720,
 					margin: 0,
+					// Reveal's default maxScale (2) stops the 1280x720 canvas at
+					// 2560x1440, leaving a border on 4K (3840x2160) displays.
+					maxScale: 4,
 				});
 				deck.initialize();
 

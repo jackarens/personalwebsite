@@ -1,0 +1,23 @@
+---
+/**
+ * A poster slide: solid colour, one statement. The keynote deck's spine.
+ * Body content is the headline (an h1 or h2 in MDX) plus optional copy.
+ */
+interface Props {
+	tone?: "red" | "teal" | "amber" | "violet" | "ink";
+	eyebrow?: string;
+	centered?: boolean;
+	class?: string;
+}
+
+const { tone = "red", eyebrow, centered = false, class: className } = Astro.props;
+---
+
+<!-- data-background-color paints the whole viewport, not just the 16:9 box. -->
+<section
+	class:list={["poster", `tone-${tone}`, { centered }, className]}
+	data-background-color={`var(--k-${tone})`}
+>
+	{eyebrow && <p class="eyebrow">{eyebrow}</p>}
+	<slot />
+</section>
