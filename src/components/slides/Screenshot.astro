@@ -34,8 +34,13 @@ const shots = import.meta.glob<{ default: ImageMetadata }>(
 	"/src/content/post/*/shots/*.{png,jpg,jpeg,webp}",
 	{ eager: true },
 );
-const match = Object.entries(shots).find(([path]) =>
+// Prefer this deck's own shots/ (copied decks share file names), then any deck's.
+const deck = Astro.url.pathname.match(/\/slides\/([^/]+)/)?.[1];
+const candidates = Object.entries(shots).filter(([path]) =>
 	path.replace(/\.[^.]+$/, "").endsWith(`/shots/${name}`),
+);
+const match = (
+	candidates.find(([path]) => deck && path.includes(`/post/${deck}/shots/`)) ?? candidates[0]
 )?.[1]?.default;
 
 const label = { linkedin: "LinkedIn", x: "X", news: "Article", phone: "Screenshot" }[platform];

@@ -502,6 +502,22 @@ body:has(.theme-keynote) {
 	font-size: 0.8em;
 }
 
+.reveal.theme-keynote .ticker b.up {
+	color: var(--k-teal);
+}
+
+.reveal.theme-keynote .ticker b.up::before {
+	content: "▲ ";
+}
+
+.reveal.theme-keynote .ticker b.flat {
+	color: var(--k-text);
+}
+
+.reveal.theme-keynote .ticker b.flat::before {
+	content: "■ ";
+}
+
 /* Thesis slides: a pull quote, big and left-set. */
 .reveal.theme-keynote section.poster .quote {
 	font-family: var(--f-display);
@@ -1201,14 +1217,15 @@ body:has(.theme-keynote) {
 }
 
 /* Left of the April low (x 724.6 of 1180) the two charts are identical, so
-   the full chart only needs to reveal what lies to the right of it. */
+   the full chart only needs to reveal what lies to the right of it. A deck
+   whose chart has a different x scale sets --uptick-clip on .chart-stack. */
 .reveal.theme-keynote .chart-stack .chart-uptick {
 	opacity: 1;
 	visibility: visible;
 }
 
 .reveal.theme-keynote .chart-stack .chart-uptick svg {
-	clip-path: inset(0 38.6% 0 0);
+	clip-path: inset(0 var(--uptick-clip, 38.6%) 0 0);
 	transition: clip-path 1.6s cubic-bezier(0.5, 0, 0.2, 1);
 }
 
