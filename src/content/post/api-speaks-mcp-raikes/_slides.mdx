@@ -20,6 +20,7 @@ import saasStocksDecline from "./saas-stocks-decline.svg?raw";
 import complexFormula from "./complex-formula.png";
 import documentViewBuilder from "./document-view-builder.png";
 import slackInterrogation from "./slack-interrogation.png";
+import dominoMeme from "./domino-meme.jpg";
 import { Image } from "astro:assets";
 
 {/* Anything wrapped in <span class="todo"> is a fact only Jack can supply.
@@ -126,7 +127,7 @@ import { Image } from "astro:assets";
 
 <Poster tone="ink">
 <p class="quote"><span class="lead">What we're being told:</span> none of it is <em>worth what it costs</em> anymore.</p>
-<p class="byline"><Fragment>Mostly screens</Fragment><Fragment>{" · "}Sold by the seat</Fragment><Fragment>{" · "}Load-bearing</Fragment></p>
+<p class="byline"><Fragment>Mostly screens</Fragment><Fragment>{" · "}Priced per user</Fragment><Fragment>{" · "}Hard to replace</Fragment></p>
 
 <aside class="notes">
 - Who's in the crosshairs: software that's heavy on UI, sold on enterprise contracts, and core to the customer's workflow.
@@ -254,7 +255,7 @@ import { Image } from "astro:assets";
 
 <ul>
 	<Fragment as="li">This will hurt some software. How much depends on your industry.</Fragment>
-	<Fragment as="li">Interfaces will get built differently. Some won't get built at all.</Fragment>
+	<Fragment as="li">Interfaces will get built differently (some not at all)</Fragment>
 	<Fragment as="li">Not every company makes it through this.</Fragment>
 </ul>
 
@@ -366,6 +367,13 @@ Authorization: Bearer <token>
 </aside>
 </Slide>
 
+{/* Domino Effect meme: Jensen (🍯) tips the smallest domino, the biggest reads
+    "complete economic collapse". Jensen photo: Prime Minister's Office (India),
+    GODL-India. 🍯 is Twemoji (CC BY 4.0). */}
+<Slide class="image-slide" data-background-color="#1d1d1d">
+<Image src={dominoMeme} alt="Domino Effect meme: a man tips a row of ever-larger dominoes. The smallest is labelled with a photo of Jensen Huang and a honey pot emoji; the largest reads “Complete economic collapse”." widths={[1640]} sizes="100vw" quality={90} />
+</Slide>
+
 <Slide>
 ## What it looks like on the wire
 
@@ -442,7 +450,7 @@ Authorization: Bearer <token>
 		<Fragment as="tr"><td>Endpoint</td><td>tool</td><td>one to one, mostly</td></Fragment>
 		<Fragment as="tr"><td>Request body schema</td><td>inputSchema</td><td>same JSON Schema</td></Fragment>
 		<Fragment as="tr"><td>Bearer token</td><td>same token, forwarded</td><td>same permissions</td></Fragment>
-		<Fragment as="tr"><td>API docs</td><td>description + resources</td><td>same text, different reader</td></Fragment>
+		<Fragment as="tr"><td>API docs</td><td>description + resources</td><td>same docs</td></Fragment>
 		<Fragment as="tr"><td>Onboarding guides</td><td>prompt</td><td>no REST equivalent</td></Fragment>
 	</tbody>
 </table>
@@ -457,6 +465,7 @@ Authorization: Bearer <token>
 	<Fragment as="li">Every vendor has its own function-calling format</Fragment>
 	<Fragment as="li">We run the server and handle sign-in</Fragment>
 	<Fragment as="li">Resources and prompts have no OpenAPI equivalent</Fragment>
+	<Fragment as="li"><strong>Security:</strong> Not all users get code execution privileges</Fragment>
 </ul>
 </Slide>
 
@@ -853,7 +862,7 @@ const PAGE_SIZE = 250;
 	<Fragment as="li">Can a new caller discover what exists in one call?</Fragment>
 	<Fragment as="li">Are writes plain objects or nested/deep unions?</Fragment>
 	<Fragment as="li">Do errors name the field and the fix, so callers can retry?</Fragment>
-	<Fragment as="li">Where do your production docs live? Can MCP resources serve that same source, or are you porting a copy that will drift?</Fragment>
+	<Fragment as="li">Where do your production docs live? Can MCP resources serve that same source?</Fragment>
 </ol>
 
 <aside class="notes">
@@ -887,7 +896,7 @@ const PAGE_SIZE = 250;
 ## Where I've landed
 
 <ul>
-	<Fragment as="li">How people use our products is changing. The value underneath isn't.</Fragment>
+	<Fragment as="li">The "how" people use our products is changing, not the value underneath</Fragment>
 	<Fragment as="li">An MCP server is the cheapest way to put that value in front of an agent.</Fragment>
 	<Fragment as="li">Building one has actually made our API usable (and surfaced a few bugs).</Fragment>
 	<Fragment as="li">Most of the work was already done. We just hadn't shipped it.</Fragment>
