@@ -207,6 +207,37 @@ body:has(.theme-keynote) {
 	margin-top: 0.1em;
 }
 
+/* Title swap: first click fades the old title out and the new one in.
+   Both share one grid cell, so the swap never shifts the layout. */
+.reveal.theme-keynote section.title-slide .title-swap {
+	display: grid;
+	align-items: end;
+}
+
+.reveal.theme-keynote section.title-slide .title-swap > * {
+	grid-area: 1 / 1;
+}
+
+.reveal.theme-keynote section.title-slide .title-old {
+	transition: opacity 0.4s ease;
+}
+
+.reveal.theme-keynote section.title-slide:has(.title-new.visible) .title-old {
+	opacity: 0;
+}
+
+.reveal.theme-keynote section.title-slide .title-new {
+	transition: opacity 0.5s ease 0.35s, visibility 0s linear 0.35s;
+}
+
+.reveal.theme-keynote section.title-slide .title-or {
+	font-family: var(--f-display);
+	font-style: italic;
+	font-size: 0.85em;
+	color: var(--k-accent);
+	margin-bottom: 0.1em;
+}
+
 /* ---------- Poster slides ---------- */
 
 .reveal.theme-keynote section.poster {

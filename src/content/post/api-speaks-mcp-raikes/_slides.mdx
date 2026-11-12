@@ -33,9 +33,18 @@ import { Image } from "astro:assets";
 <Slide class="title-slide" data-background-gradient="radial-gradient(70% 60% at 85% 15%, color-mix(in srgb, var(--k-teal) 55%, transparent), transparent 70%)">
 <p class="eyebrow">Raikes School · 12 November 2026</p>
 
-# Your API Already Speaks MCP
-
-<p class="subtitle">You just haven't shipped it.</p>
+{/* First click fades the original title out and the real one in. */}
+<div class="title-swap">
+	<div class="title-old">
+		<h1>Your API Already Speaks MCP</h1>
+		<p class="subtitle">You just haven't shipped it.</p>
+	</div>
+	<Fragment as="div" class="title-new">
+		<p class="title-or">or,</p>
+		<h1>AI Isn't Killing Your Software</h1>
+		<p class="subtitle">It just needs a way in.</p>
+	</Fragment>
+</div>
 <p class="author">Jack Arens</p>
 <p class="role">Lead Software Architect @ Layer</p>
 </Slide>

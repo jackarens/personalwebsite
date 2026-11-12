@@ -30,7 +30,7 @@ const { personal = true, layer = true } = Astro.props;
 						<Fragment as="li">Engineering @ Layer since graduation</Fragment>
 						<Fragment as="li">Live in Lincoln, NE with my wife and kids</Fragment>
 						<Fragment as="li">Fun Fact: Enjoy gardening and DIY</Fragment>
-						<Fragment as="li">Fun Fact 2: I can ride a unicycle 🦄</Fragment>
+						<Fragment as="li">Fun Fact 2: I can ride a unicycle</Fragment>
 					</ul>
 				</div>
 			</div>
@@ -40,23 +40,24 @@ const { personal = true, layer = true } = Astro.props;
 
 {
 	layer && (
-<section>
-	<h2>About Layer</h2>
-	<div class="r-stack">
-		<ul>
-			<Fragment as="li">Construction data management platform</Fragment>
-			<Fragment as="li">Used by architecture firms and job sites worldwide</Fragment>
-		</ul>
-		<Image src={layerAppView} alt="Layer logo" class="fragment fade-in-then-out" />
-		<video autoplay loop muted playsinline class="fragment">
-			<source src="/layer-doc-view.mp4" type="video/mp4" />
-		</video>
-		<iframe
-			class="fragment"
-			style="width:100%;height:100%;border:none;border-radius:12px"
-			src="https://public.layer.team/view/LZ7XNzTAal925CW6XYpM?hideBorder=true"
-			title="🔲 All Rooms"></iframe>
-	</div>
-</section>
+		<section>
+			<h2>About Layer</h2>
+			<div class="r-stack">
+				<ul>
+					<Fragment as="li">Construction data management platform</Fragment>
+					<Fragment as="li">Used by architecture firms and job sites worldwide</Fragment>
+				</ul>
+				<Image src={layerAppView} alt="Layer logo" class="fragment fade-in-then-out" />
+				<video autoplay loop muted playsinline class="fragment">
+					<source src="/layer-doc-view.mp4" type="video/mp4" />
+				</video>
+				<iframe
+					class="fragment"
+					style="width:100%;height:100%;border:none;border-radius:12px"
+					src="https://public.layer.team/view/LZ7XNzTAal925CW6XYpM?hideBorder=true"
+					title="🔲 All Rooms"
+				/>
+			</div>
+		</section>
 	)
 }
